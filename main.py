@@ -10,7 +10,7 @@ from server import online
 
 
 #load_dotenv()
-TOKEN = os.getenv('TOKEN')
+TOKEN = os.getenv('BOT_TOKEN')
 VERSION = '0.5'
 
 

@@ -10,7 +10,7 @@ from server import online
 
 
 #load_dotenv()
-TOKEN = os.environ.get("TKN")
+TOKEN = os.getenv('TOKEN')
 VERSION = '0.5'
 
 
@@ -53,11 +53,11 @@ class MyBot(commands.Bot):
                     title = 'Member Joined',
                     description = f'{member} | {member.mention}',
                     color = discord.Color.dark_grey(),
-                    timestamp = datetime.datetime.utcnow()
+                    timestamp = datetime.datetime.now()
                 )
                 log.set_author(name = f'{member.guild}', icon_url = member.guild.icon_url)
                 log.set_thumbnail(url = member.avatar_url)
-                log.add_field(name = 'Account Age', value = (datetime.datetime.utcnow() - member.created_at), inline=False)
+                log.add_field(name = 'Account Age', value = (datetime.datetime.now() - member.created_at), inline=False)
                 log.set_footer(text = f'ID: {member.id}')
                 await logcnl.send(embed = log)  # type: ignore
 
@@ -72,7 +72,7 @@ class MyBot(commands.Bot):
                     title = 'Member Left',
                     description = f'{member} | {member.mention}',
                     color = discord.Color.dark_grey(),
-                    timestamp = datetime.datetime.utcnow()
+                    timestamp = datetime.datetime.now()
                 )
                 log.set_author(name = f'{member.guild}', icon_url = member.guild.icon_url)
                 log.set_footer(text = f'ID: {member.id}')
@@ -88,7 +88,7 @@ class MyBot(commands.Bot):
                 log = discord.Embed(
                     description = f'**{before.mention} nickname changed**',
                     color = discord.Color.dark_grey(),
-                    timestamp = datetime.datetime.utcnow()
+                    timestamp = datetime.datetime.now()
                 )
                 log.set_author(name = after, icon_url=after.avatar_url)
                 log.add_field(name = 'Before', value = before.display_name, inline = False)
@@ -112,7 +112,7 @@ class MyBot(commands.Bot):
                 log = discord.Embed(
                     description = f'**Message sent by {message.author.mention} deleted in {message.channel.mention}**\n{edit}',
                     color = discord.Color.dark_grey(),
-                    timestamp = datetime.datetime.utcnow()
+                    timestamp = datetime.datetime.now()
                 )
                 log.set_author(name = f'{message.author}', icon_url = message.author.avatar_url)
                 log.set_footer(text = f'User ID: {message.author.id} | Message ID: {message.id}')
@@ -172,7 +172,7 @@ class MyBot(commands.Bot):
                     log = discord.Embed(
                         description=des,
                         color=discord.Color.dark_grey(),
-                    timestamp=datetime.datetime.utcnow()
+                    timestamp=datetime.datetime.now()
                     )
                     log.set_author(name = member, icon_url = member.avatar_url)
                     log.set_footer(text = f'ID: {member.id}')

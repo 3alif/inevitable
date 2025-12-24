@@ -9,7 +9,7 @@ import datetime
 from server import online
 
 
-#load_dotenv()
+load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
 VERSION = '0.5'
 

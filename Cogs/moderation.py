@@ -41,9 +41,9 @@ class Moderation(commands.Cog):
         log = discord.Embed(
           description = f'Used `clear` in {ctx.channel.mention}\n{ctx.message.content}',
           color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.utcnow()
+          timestamp = datetime.datetime.now()
         )
-        log.set_author(name = f'{ctx.author}', icon_url = ctx.author.avatar_url)
+        log.set_author(name = f'{ctx.author}', icon_url = ctx.author.display_avatar.url)
         await logcnl.send(embed = log)
 
 
@@ -61,9 +61,9 @@ class Moderation(commands.Cog):
         log = discord.Embed(
           description = f'Used `notice` in {ctx.channel.mention}\n{ctx.message.content}',
           color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.utcnow()
+          timestamp = datetime.datetime.now()
         )
-        log.set_author(name = f'{ctx.author}', icon_url = ctx.author.avatar_url)
+        log.set_author(name = f'{ctx.author}', icon_url = ctx.author.display_avatar.url)
         await logcnl.send(embed = log)
 
 
@@ -86,9 +86,9 @@ class Moderation(commands.Cog):
         log = discord.Embed(
           description = f'Used `announce` in {ctx.channel.mention}\n{ctx.message.content}',
           color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.utcnow()
+          timestamp = datetime.datetime.now()
         )
-        log.set_author(name = f'{ctx.author}', icon_url = ctx.author.avatar_url)
+        log.set_author(name = f'{ctx.author}', icon_url = ctx.author.display_avatar.url)
         await logcnl.send(embed = log)
 
 
@@ -117,9 +117,9 @@ class Moderation(commands.Cog):
         logcnl = self.client.get_channel(logger[str(ctx.guild.id)])
         log = discord.Embed(
           color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.utcnow()
+          timestamp = datetime.datetime.now()
         )
-        log.set_author(name = f'Kicked | {member}', icon_url = member.avatar_url)
+        log.set_author(name = f'Kicked | {member}', icon_url = member.display_avatar.url)
         log.add_field(name = 'User:', Value = f'<@{uid}>', inline = True)
         log.add_field(name = 'Moderator:', value = ctx.author.mention, inline = True)
         log.add_field(name = 'Reason:', value = reason, inline = True)
@@ -161,9 +161,9 @@ class Moderation(commands.Cog):
         logcnl = self.client.get_channel(logger[str(ctx.guild.id)])
         log = discord.Embed(
           color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.utcnow()
+          timestamp = datetime.datetime.now()
         )
-        log.set_author(name = f'Banned | {member}', icon_url = member.avatar_url)
+        log.set_author(name = f'Banned | {member}', icon_url = member.display_avatar.url)
         log.add_field(name = 'User:', value = f'<@{uid}>', inline = True)
         log.add_field(name = 'Moderator:', value = ctx.author.mention, inline = True)
         log.add_field(name = 'Reason:', value = reason, inline = True)
@@ -206,9 +206,9 @@ class Moderation(commands.Cog):
         logcnl = self.client.get_channel(logger[str(ctx.guild.id)])
         log = discord.Embed(
           color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.utcnow()
+          timestamp = datetime.datetime.now()
         )
-        log.set_author(name = f'Unbanned | {member}', icon_url = member.avatar_url)
+        log.set_author(name = f'Unbanned | {member}', icon_url = member.display_avatar.url)
         log.add_field(name = 'User:', value = f'<@{uid}>', inline = True)
         log.add_field(name = 'Moderator:', value = ctx.author.mention, inline = True)
         await logcnl.send(embed = log)

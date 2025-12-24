@@ -86,7 +86,7 @@ class Misc(commands.Cog):
       title = 'Inevitable',
       description = f'[Invite](https://dsc.gg/inevitablebot) • [Vote](https://top.gg/bot/920757063599132683/vote) • [Support Server](https://discord.gg/F9N8DmsJyz)',
       colour = discord.Colour.orange(),
-      timestamp = datetime.datetime.utcnow()
+      timestamp = datetime.datetime.now()
     )
 
     embed.set_author(name = 'Statistics', icon_url = self.client.user.display_avatar.url)
@@ -135,21 +135,21 @@ class Misc(commands.Cog):
       setEmbed.add_field(name = 'config', value = '```Usage: i.config```', inline = False)
       await ctx.send(embed = setEmbed)
 
-    elif category == 'music' or category == 'Music':
-      musicEmbed = discord.Embed(
-        title = 'Music Commands',
-        color = discord.Color.gold()
-      )
-      musicEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
-      musicEmbed.add_field(name = 'join', value = '```Usage: i.join\nAliases: connect```', inline = False)
-      musicEmbed.add_field(name = 'leave', value = '```Usage: i.leave\nAliases: disconnect, dc```', inline = False)
-      musicEmbed.add_field(name = 'play', value = '```Usage: i.play {song}\nAliases: p```', inline = False)
-      musicEmbed.add_field(name = 'queue', value = '```Usage: i.queue```', inline = False)
-      musicEmbed.add_field(name = 'pause', value = '```Usage: i.pause```', inline = False)
-      musicEmbed.add_field(name = 'resume', value = '```Usage: i.resume```', inline = False)
-      musicEmbed.add_field(name = 'skip', value = '```Usage: i.skip```', inline = False)
-      musicEmbed.add_field(name = 'stop', value = '```Usage: i.stop```', inline = False)
-      await ctx.send(embed = musicEmbed)
+    # elif category == 'music' or category == 'Music':
+    #   musicEmbed = discord.Embed(
+    #     title = 'Music Commands',
+    #     color = discord.Color.gold()
+    #   )
+    #   musicEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
+    #   musicEmbed.add_field(name = 'join', value = '```Usage: i.join\nAliases: connect```', inline = False)
+    #   musicEmbed.add_field(name = 'leave', value = '```Usage: i.leave\nAliases: disconnect, dc```', inline = False)
+    #   musicEmbed.add_field(name = 'play', value = '```Usage: i.play {song}\nAliases: p```', inline = False)
+    #   musicEmbed.add_field(name = 'queue', value = '```Usage: i.queue```', inline = False)
+    #   musicEmbed.add_field(name = 'pause', value = '```Usage: i.pause```', inline = False)
+    #   musicEmbed.add_field(name = 'resume', value = '```Usage: i.resume```', inline = False)
+    #   musicEmbed.add_field(name = 'skip', value = '```Usage: i.skip```', inline = False)
+    #   musicEmbed.add_field(name = 'stop', value = '```Usage: i.stop```', inline = False)
+    #   await ctx.send(embed = musicEmbed)
 
     elif category == 'misc' or category == 'Misc':
       miscEmbed = discord.Embed(
@@ -168,7 +168,7 @@ class Misc(commands.Cog):
       helpEmbed = discord.Embed(
         description = '[Invite](https://dsc.gg/inevitablebot) • [Vote](https://top.gg/bot/920757063599132683/vote) • [Support Server](https://discord.gg/F9N8DmsJyz)\nType `ihelp <category>` for more information regarding a specific category.',
         color = discord.Colour.orange(),
-        timestamp = datetime.datetime.now(datetime.UTC)
+        timestamp = datetime.datetime.now()
       )
   
       helpEmbed.set_author(name = 'Commands', icon_url = self.client.user.display_avatar.url)

@@ -84,14 +84,14 @@ class Settings(commands.Cog):
     embed = discord.Embed(
       title = ctx.guild,
       color = discord.Color.purple(),
-      timestamp = datetime.datetime.utcnow()
+      timestamp = datetime.datetime.now()
     )
-    embed.set_author(name = 'Configuration', icon_url = self.client.user.avatar_url)
+    embed.set_author(name = 'Configuration', icon_url = self.client.user.display_avatar.url)
     embed.set_thumbnail(url = ctx.guild.icon_url)
     embed.add_field(name = 'Prefix', value = '`i.` or `@mention`\nType ***i.help*** or ***`@Inevitable` help*** to get started.', inline = False)
     embed.add_field(name = 'Log Channel', value = channel, inline = False)
     embed.add_field(name = 'Useful Links', value = '[Invite](https://dsc.gg/inevitablebot) • [Vote](https://top.gg/bot/920757063599132683/vote) • [Support Server](https://discord.gg/F9N8DmsJyz)', inline = False)
-    embed.set_footer(text = f'Requested by {ctx.author}', icon_url = ctx.author.avatar_url)
+    embed.set_footer(text = f'Requested by {ctx.author}', icon_url = ctx.author.display_avatar.url)
     await ctx.send(embed = embed)
 
 

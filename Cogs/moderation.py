@@ -52,7 +52,7 @@ class Moderation(commands.Cog):
   @app_commands.command(name = 'notice', description = 'Publish a notice in a specific channel.')
   @app_commands.checks.cooldown(1, 3.0)
   @app_commands.checks.has_permissions(administrator=True)
-  async def notice(self, interaction: discord.Interaction, channel: discord.TextChannel, *, message):
+  async def notice(self, interaction: discord.Interaction, channel: discord.TextChannel, *, message: str):
     await channel.send(message)
     await interaction.response.send_message(f'Notice sent in {channel.mention}', ephemeral=True)
 
@@ -72,7 +72,7 @@ class Moderation(commands.Cog):
   @app_commands.command(name = 'announce', description = 'Announce an embed message in a specific channel.')
   @app_commands.checks.cooldown(1, 3.0)
   @app_commands.checks.has_permissions(administrator=True)
-  async def announce(self, interaction: discord.Interaction, channel: discord.TextChannel, *, message):
+  async def announce(self, interaction: discord.Interaction, channel: discord.TextChannel, *, message: str):
     embed = discord.Embed(
       title = 'Announcement!',
       description = message,

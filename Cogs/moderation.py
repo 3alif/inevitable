@@ -1,6 +1,7 @@
 import discord
 import json
 from discord.ext import commands
+from discord import app_commands
 from discord.ext.commands import has_permissions
 import datetime
 
@@ -10,85 +11,86 @@ class Moderation(commands.Cog):
     self.client = client
 
     
-  @commands.command(help = 'Alert a member not to go off-topic in a topic wise channel and mention an off-topic channel.')
-  @commands.cooldown(1, 3, commands.BucketType.user)
-  @has_permissions(manage_messages=True)
-  async def topic(self, ctx, uid: int, channel):
-    user = await ctx.guild.fetch_member(uid)
-    await ctx.message.delete()
-    await ctx.send(f'Please, avoid going off-topic in this channel {user.mention}. You can share any day-to-day stuff in {channel}')
+  @app_commands.command(name = 'topic', description = 'Alert a member not to go off-topic in a topic wise channel and mention an off-topic channel.')
+  @app_commands.describe(member = 'The member to alert.', channel = 'The channel to avoid off-topic in.')
+  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.has_permissions(manage_messages=True)
+  async def topic(self, interaction: discord.Interaction, member: discord.Member, channel: discord.TextChannel):
+    await channel.send(f'Please, avoid going off-topic in this channel {member.mention}. You can share any day-to-day stuff in {channel}')
+    await interaction.response.send_message(f'Alert sent to {member} in {channel.mention}', ephemeral=True)
 
 
-  @commands.command(aliases = ['language'], help = 'Alert a member to use a certain language in a language channel.')
-  @commands.cooldown(1, 3, commands.BucketType.user)
-  @has_permissions(manage_messages=True)
-  async def lang(self, ctx, uid: int, language):
-    user = await ctx.guild.fetch_member(uid)
-    await ctx.message.delete()
-    await ctx.send(f'Please, refrain from texting any language other than {language} in this channel, {user.mention}.')
 
-  @commands.command(aliases = ['purge'], help = 'Clears a certain amount of messages.')
-  @commands.cooldown(1, 3, commands.BucketType.user)
-  @has_permissions(administrator=True)
-  async def clear(self, ctx, amount = 0):
-    await ctx.message.delete()
-    await ctx.channel.purge(limit = amount)
+  @app_commands.command(name = 'lang', description = 'Alert a member to use a certain language in a language channel.')
+  @app_commands.describe(member = 'The member to alert.', language = 'The language to use in the channel.')
+  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.has_permissions(manage_messages=True)
+  async def lang(self, interaction: discord.Interaction, member: discord.Member, language: str):
+    await interaction.channel.send(f'Please, refrain from texting any language other than {language} in this channel, {member.mention}.')
+    await interaction.response.send_message(f'Alert sent to {member} in {interaction.channel.mention}', ephemeral=True)
+
+  @app_commands.command(name = 'purge', description = 'Clears a certain amount of messages.')
+  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.has_permissions(manage_messages=True)
+  async def purge(self, interaction: discord.Interaction, amount: int = 0):
+    await interaction.response.send_message(f'Purging {amount} messages...', ephemeral=True)
+    await interaction.channel.purge(limit = amount)
 
     with open("log_channels.json", "r") as f:
         logger = json.load(f)
-    if str(ctx.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(ctx.guild.id)])
+    if str(interaction.guild.id) in logger:
+        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
         log = discord.Embed(
-          description = f'Used `clear` in {ctx.channel.mention}\n{ctx.message.content}',
+          description = f'Used `purge` in {interaction.channel.mention}\n{interaction.message.content}',
           color = discord.Color.dark_grey(),
           timestamp = datetime.datetime.now()
         )
-        log.set_author(name = f'{ctx.author}', icon_url = ctx.author.display_avatar.url)
+        log.set_author(name = f'{interaction.user}', icon_url = interaction.user.display_avatar.url)
         await logcnl.send(embed = log)
 
 
-  @commands.command(help = 'Publish a notice in a specific channel.')
-  @commands.cooldown(1, 3, commands.BucketType.user)
-  @has_permissions(administrator=True)
-  async def notice(self, ctx, channel:discord.TextChannel, *, message):
+  @app_commands.command(name = 'notice', description = 'Publish a notice in a specific channel.')
+  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.has_permissions(administrator=True)
+  async def notice(self, interaction: discord.Interaction, channel: discord.TextChannel, *, message):
     await channel.send(message)
-    await ctx.message.delete()
+    await interaction.response.send_message(f'Notice sent in {channel.mention}', ephemeral=True)
 
     with open("log_channels.json", "r") as f:
         logger = json.load(f)
-    if str(ctx.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(ctx.guild.id)])
+    if str(interaction.guild.id) in logger:
+        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
         log = discord.Embed(
-          description = f'Used `notice` in {ctx.channel.mention}\n{ctx.message.content}',
+          description = f'Used `notice` in {interaction.channel.mention}\n{interaction.message.content}',
           color = discord.Color.dark_grey(),
           timestamp = datetime.datetime.now()
         )
-        log.set_author(name = f'{ctx.author}', icon_url = ctx.author.display_avatar.url)
+        log.set_author(name = f'{interaction.user}', icon_url = interaction.user.display_avatar.url)
         await logcnl.send(embed = log)
 
 
-  @commands.command(help = 'Announce an embed message in a specific channel.')
-  @commands.cooldown(1, 3, commands.BucketType.user)
-  @has_permissions(administrator=True)
-  async def announce(self, ctx, channel:discord.TextChannel, *, message):
+  @app_commands.command(name = 'announce', description = 'Announce an embed message in a specific channel.')
+  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.has_permissions(administrator=True)
+  async def announce(self, interaction: discord.Interaction, channel: discord.TextChannel, *, message):
     embed = discord.Embed(
       title = 'Announcement!',
       description = message,
       color = discord.Colour.purple()
     )
     await channel.send(embed=embed)
-    await ctx.message.add_reaction('✅')
+    await interaction.response.send_message(f'Announcement sent in {channel.mention}', ephemeral=True)
 
     with open("log_channels.json", "r") as f:
         logger = json.load(f)
-    if str(ctx.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(ctx.guild.id)])
+    if str(interaction.guild.id) in logger:
+        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
         log = discord.Embed(
-          description = f'Used `announce` in {ctx.channel.mention}\n{ctx.message.content}',
+          description = f'Used `announce` in {interaction.channel.mention}\n{interaction.message.content}',
           color = discord.Color.dark_grey(),
           timestamp = datetime.datetime.now()
         )
-        log.set_author(name = f'{ctx.author}', icon_url = ctx.author.display_avatar.url)
+        log.set_author(name = f'{interaction.user}', icon_url = interaction.user.display_avatar.url)
         await logcnl.send(embed = log)
 
 

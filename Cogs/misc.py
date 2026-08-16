@@ -36,7 +36,8 @@ class Misc(commands.Cog):
     
     embed = discord.Embed(
       title = f'{name}\'s Avatar',
-      color = discord.Colour.purple()
+      color = discord.Colour.purple(),
+      timestamp = datetime.datetime.now()
     )
     embed.set_image(url = image)
     await interaction.response.send_message(embed = embed)
@@ -105,78 +106,86 @@ class Misc(commands.Cog):
     await interaction.response.send_message(embed = embed)
 
 
-  @app_commands.command(description = 'Shows commands information.')
+  @app_commands.command(name = 'help', description = 'Shows commands information.')
   @app_commands.describe(category = 'The category of commands you want to see.')
   async def help(self, interaction: discord.Interaction, category: str = None):
     if category == 'moderation' or category == 'Moderation':
       modEmbed = discord.Embed(
         title = 'Moderation Commands',
         description = 'Cooldown: 3 seconds',
-        color = discord.Color.gold()
+        color = discord.Color.gold(),
+        timestamp = datetime.datetime.now()
       )
       modEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
-      modEmbed.add_field(name = 'lang', value = '```Permission: Manage Messages\nUsage: i.lang [USER_ID] [LANGUAGE]\nAliases: language```', inline = False)
-      modEmbed.add_field(name = 'topic', value = '```Permission: Manage Messages\nUsage: i.topic [USER_ID] #off-topic-channel```', inline = False)
-      modEmbed.add_field(name = 'clear', value = '```Permission: Administrator\nUsage: i.clear [AMOUNT]\nAliases: purge```', inline = False)
-      modEmbed.add_field(name = 'kick', value = '```Permission: Kick Members\nUsage: i.kick [USER_ID] {reason}```', inline = False)
-      modEmbed.add_field(name = 'ban', value = '```Permission: Ban Members\nUsage: i.ban [USER_ID] {reason}```', inline = False)
-      modEmbed.add_field(name = 'unban', value = '```Permission: Ban Members\nUsage: i.unban [USER_ID] {reason}```', inline = False)
-      modEmbed.add_field(name = 'notice', value = '```Permission: Administrator\nUsage: i.notice #channel-mention {message}```', inline = False)
-      modEmbed.add_field(name = 'announce', value = '```Permission: Administrator\nUsage: i.announce #channel-mention {message}```', inline = False)
+      modEmbed.add_field(name = 'lang', value = '```Permission: Manage Messages\nUsage: /lang [MEMBER] [LANGUAGE]```', inline = False)
+      modEmbed.add_field(name = 'topic', value = '```Permission: Manage Messages\nUsage: /topic [MEMBER] #off-topic-channel```', inline = False)
+      modEmbed.add_field(name = 'purge', value = '```Permission: Administrator\nUsage: /purge [AMOUNT]```', inline = False)
+      modEmbed.add_field(name = 'kick', value = '```Permission: Kick Members\nUsage: /kick [MEMBER] {reason}```', inline = False)
+      modEmbed.add_field(name = 'ban', value = '```Permission: Ban Members\nUsage: /ban [MEMBER] {reason}```', inline = False)
+      modEmbed.add_field(name = 'unban', value = '```Permission: Ban Members\nUsage: /unban [MEMBER] {reason}```', inline = False)
+      modEmbed.add_field(name = 'notice', value = '```Permission: Administrator\nUsage: /notice #channel {message}```', inline = False)
+      modEmbed.add_field(name = 'announce', value = '```Permission: Administrator\nUsage: /announce #channel {message}```', inline = False)
+      modEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
       await interaction.response.send_message(embed = modEmbed)
 
     elif category == 'settings' or category == 'Settings':
       setEmbed = discord.Embed(
         title = 'Setting Commands',
-        color = discord.Color.gold()
+        color = discord.Color.gold(),
+        timestamp = datetime.datetime.now()
       )
       setEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
-      setEmbed.add_field(name = 'guildinfo', value = '```Usage: i.guildinfo\nAliases: serverinfo```', inline = False)
-      setEmbed.add_field(name = 'log', value = '```Permission: Administrator\nUsage: i.log #channel-mention```', inline = False)
-      setEmbed.add_field(name = 'config', value = '```Usage: i.config```', inline = False)
+      setEmbed.add_field(name = 'serverinfo', value = '```Usage: /serverinfo```', inline = False)
+      setEmbed.add_field(name = 'log', value = '```Permission: Administrator\nUsage: /log #channel```', inline = False)
+      setEmbed.add_field(name = 'config', value = '```Usage: /config```', inline = False)
+      setEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
       await interaction.response.send_message(embed = setEmbed)
 
     # elif category == 'music' or category == 'Music':
     #   musicEmbed = discord.Embed(
     #     title = 'Music Commands',
-    #     color = discord.Color.gold()
+    #     color = discord.Color.gold(),
+    #     timestamp = datetime.datetime.now()
     #   )
     #   musicEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
-    #   musicEmbed.add_field(name = 'join', value = '```Usage: i.join\nAliases: connect```', inline = False)
-    #   musicEmbed.add_field(name = 'leave', value = '```Usage: i.leave\nAliases: disconnect, dc```', inline = False)
-    #   musicEmbed.add_field(name = 'play', value = '```Usage: i.play {song}\nAliases: p```', inline = False)
-    #   musicEmbed.add_field(name = 'queue', value = '```Usage: i.queue```', inline = False)
-    #   musicEmbed.add_field(name = 'pause', value = '```Usage: i.pause```', inline = False)
-    #   musicEmbed.add_field(name = 'resume', value = '```Usage: i.resume```', inline = False)
-    #   musicEmbed.add_field(name = 'skip', value = '```Usage: i.skip```', inline = False)
-    #   musicEmbed.add_field(name = 'stop', value = '```Usage: i.stop```', inline = False)
+    #   musicEmbed.add_field(name = 'join', value = '```Usage: /join```', inline = False)
+    #   musicEmbed.add_field(name = 'leave', value = '```Usage: /leave```', inline = False)
+    #   musicEmbed.add_field(name = 'play', value = '```Usage: /play [song]```', inline = False)
+    #   musicEmbed.add_field(name = 'queue', value = '```Usage: /queue```', inline = False)
+    #   musicEmbed.add_field(name = 'pause', value = '```Usage: /pause```', inline = False)
+    #   musicEmbed.add_field(name = 'resume', value = '```Usage: /resume```', inline = False)
+    #   musicEmbed.add_field(name = 'skip', value = '```Usage: /skip```', inline = False)
+    #   musicEmbed.add_field(name = 'stop', value = '```Usage: /stop```', inline = False)
+    #   musicEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
     #   await ctx.send(embed = musicEmbed)
 
     elif category == 'misc' or category == 'Misc':
       miscEmbed = discord.Embed(
         title = 'Miscellaneous Commands',
-        color = discord.Color.gold()
+        color = discord.Color.gold(),
+        timestamp = datetime.datetime.now()
       )
       miscEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
-      miscEmbed.add_field(name = 'help', value = '```Usage: i.help {category}(Optional)```', inline = False)
-      miscEmbed.add_field(name = 'ping', value = '```Usage: i.ping```', inline = False)
-      miscEmbed.add_field(name = 'stats', value = '```Usage: i.stats\nAliases: statistics```', inline = False)
-      miscEmbed.add_field(name = 'avatar', value = '```Usage: i.avatar [USER_ID](Optional)\nAliases: av```', inline = False)
-      miscEmbed.add_field(name = 'dice', value = '```Usage: i.dice```', inline = False)
+      miscEmbed.add_field(name = 'help', value = '```Usage: /help [category](Optional)```', inline = False)
+      miscEmbed.add_field(name = 'ping', value = '```Usage: /ping```', inline = False)
+      miscEmbed.add_field(name = 'stats', value = '```Usage: /stats```', inline = False)
+      miscEmbed.add_field(name = 'avatar', value = '```Usage: /avatar [MEMBER](Optional)```', inline = False)
+      miscEmbed.add_field(name = 'dice', value = '```Usage: /dice```', inline = False)
+      miscEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
       await interaction.response.send_message(embed = miscEmbed)
 
     else:
       helpEmbed = discord.Embed(
-        description = '[Invite](https://dsc.gg/inevitablebot) • [Vote](https://top.gg/bot/920757063599132683/vote) • [Support Server](https://discord.gg/F9N8DmsJyz)\nType `ihelp <category>` for more information regarding a specific category.',
+        description = '[Invite](https://dsc.gg/inevitablebot) • [Vote](https://top.gg/bot/920757063599132683/vote) • [Support Server](https://discord.gg/F9N8DmsJyz)\nType `/help <category>` for more information regarding a specific category.',
         color = discord.Colour.orange(),
         timestamp = datetime.datetime.now()
       )
   
       helpEmbed.set_author(name = 'Commands', icon_url = self.client.user.display_avatar.url)
-      helpEmbed.add_field(name = 'Moderation', value = '`lang`, `topic`, `clear`, `kick`, `ban`, `unban`, `notice`, `announce`', inline = False)
-      helpEmbed.add_field(name = 'Settings', value = '`guildinfo`, `log`, `config`', inline = False)
-      helpEmbed.add_field(name = 'Music', value = '`join`, `leave`, `play`, `queue`, `pause`, `resume`, `skip`, `stop`', inline = False)
-      helpEmbed.add_field(name = 'Misc', value = '`help`, `ping`, `stats`, `avatar`, `dice`', inline = False)
+      helpEmbed.add_field(name = 'Moderation', value = '`/lang`, `/topic`, `/purge`, `/kick`, `/ban`, `/unban`, `notice`, `announce`', inline = False)
+      helpEmbed.add_field(name = 'Settings', value = '`/serverinfo`, `/log`, `/config`', inline = False)
+      helpEmbed.add_field(name = 'Music', value = '`/join`, `/leave`, `/play`, `/queue`, `/pause`, `/resume`, `/skip`, `/stop`', inline = False)
+      helpEmbed.add_field(name = 'Misc', value = '`/help`, `/ping`, `/stats`, `/avatar`, `/dice`', inline = False)
       helpEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
   
       await interaction.response.send_message(embed = helpEmbed)

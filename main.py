@@ -33,7 +33,7 @@ class MyBot(commands.Bot):
                 await self.load_extension(f'Cogs.{filename[:-3]}')
 
     async def on_ready(self):
-        await self.change_presence(activity=discord.Game(name='i.help | @Inevitable help'))
+        await self.change_presence(activity=discord.Game(name='/help'))
         await self.tree.sync()
         print(f"imma ready in {len(self.guilds)} servers")
 

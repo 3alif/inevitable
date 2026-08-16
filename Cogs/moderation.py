@@ -13,7 +13,7 @@ class Moderation(commands.Cog):
     
   @app_commands.command(name = 'topic', description = 'Alert a member not to go off-topic in a topic wise channel and mention an off-topic channel.')
   @app_commands.describe(member = 'The member to alert.', channel = 'The channel to avoid off-topic in.')
-  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.cooldown(1, 3.0)
   @app_commands.checks.has_permissions(manage_messages=True)
   async def topic(self, interaction: discord.Interaction, member: discord.Member, channel: discord.TextChannel):
     await channel.send(f'Please, avoid going off-topic in this channel {member.mention}. You can share any day-to-day stuff in {channel}')
@@ -23,14 +23,14 @@ class Moderation(commands.Cog):
 
   @app_commands.command(name = 'lang', description = 'Alert a member to use a certain language in a language channel.')
   @app_commands.describe(member = 'The member to alert.', language = 'The language to use in the channel.')
-  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.cooldown(1, 3.0)
   @app_commands.checks.has_permissions(manage_messages=True)
   async def lang(self, interaction: discord.Interaction, member: discord.Member, language: str):
     await interaction.channel.send(f'Please, refrain from texting any language other than {language} in this channel, {member.mention}.')
     await interaction.response.send_message(f'Alert sent to {member} in {interaction.channel.mention}', ephemeral=True)
 
   @app_commands.command(name = 'purge', description = 'Clears a certain amount of messages.')
-  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.cooldown(1, 3.0)
   @app_commands.checks.has_permissions(manage_messages=True)
   async def purge(self, interaction: discord.Interaction, amount: int = 0):
     await interaction.response.send_message(f'Purging {amount} messages...', ephemeral=True)
@@ -50,7 +50,7 @@ class Moderation(commands.Cog):
 
 
   @app_commands.command(name = 'notice', description = 'Publish a notice in a specific channel.')
-  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.cooldown(1, 3.0)
   @app_commands.checks.has_permissions(administrator=True)
   async def notice(self, interaction: discord.Interaction, channel: discord.TextChannel, *, message):
     await channel.send(message)
@@ -70,7 +70,7 @@ class Moderation(commands.Cog):
 
 
   @app_commands.command(name = 'announce', description = 'Announce an embed message in a specific channel.')
-  @app_commands.cooldown(1, 3, app_commands.BucketType.user)
+  @app_commands.checks.cooldown(1, 3.0)
   @app_commands.checks.has_permissions(administrator=True)
   async def announce(self, interaction: discord.Interaction, channel: discord.TextChannel, *, message):
     embed = discord.Embed(

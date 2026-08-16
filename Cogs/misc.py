@@ -105,7 +105,8 @@ class Misc(commands.Cog):
     await interaction.response.send_message(embed = embed)
 
 
-  @app_commands.command(help = 'Shows this message.')
+  @app_commands.command(description = 'Shows commands information.')
+  @app_commands.describe(category = 'The category of commands you want to see.')
   async def help(self, interaction: discord.Interaction, category: str = None):
     if category == 'moderation' or category == 'Moderation':
       modEmbed = discord.Embed(

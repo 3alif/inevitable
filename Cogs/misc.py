@@ -14,12 +14,12 @@ class Misc(commands.Cog):
     self.client = client
 
 
-  @app_commands.command(description = 'Shows the bot\'s latency.')
+  @app_commands.command(name = 'ping', description = 'Shows the bot\'s latency.')
   async def ping(self, interaction: discord.Interaction):
     await interaction.response.send_message(f"Pong! :smirk: `{round(self.client.latency * 1000)} ms`")
 
 
-  @app_commands.command(description = 'Gives you a random number from 1 to 6.')
+  @app_commands.command(name = 'dice', description = 'Gives you a random number from 1 to 6.')
   async def dice(self, interaction: discord.Interaction):
     number = ['1', '2', '3', '4', '5', '6']
     await interaction.response.send_message('🎲 You have got ' + random.choice(number))

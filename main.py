@@ -34,6 +34,7 @@ class MyBot(commands.Bot):
 
     async def on_ready(self):
         await self.change_presence(activity=discord.Game(name='i.help | @Inevitable help'))
+        await self.tree.sync()
         print(f"imma ready in {len(self.guilds)} servers")
 
 

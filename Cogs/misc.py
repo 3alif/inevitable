@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import datetime
 import time
 import psutil
@@ -13,15 +14,15 @@ class Misc(commands.Cog):
     self.client = client
 
 
-  @commands.command(help = 'Shows the bot\'s latency.')
-  async def ping(self, ctx):
-    await ctx.send(f"Pong! :smirk: `{round(self.client.latency * 1000)} ms`")
+  @app_commands.command(help = 'Shows the bot\'s latency.')
+  async def ping(self, interaction: discord.Interaction):
+    await interaction.response.send_message(f"Pong! :smirk: `{round(self.client.latency * 1000)} ms`")
 
 
-  @commands.command(help = 'Gives you a random number from 1 to 6.')
-  async def dice(self, ctx):
+  @app_commands.command(help = 'Gives you a random number from 1 to 6.')
+  async def dice(self, interaction: discord.Interaction):
     number = ['1', '2', '3', '4', '5', '6']
-    await ctx.reply('🎲 You have got ' + random.choice(number), mention_author = False)
+    await interaction.response.send_message('🎲 You have got ' + random.choice(number))
 
 
   @commands.command(aliases = ['av'], help = 'Shows avatar of an user.')

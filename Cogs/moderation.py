@@ -96,137 +96,133 @@ class Moderation(commands.Cog):
 
 
   #Kick-Ban-Unban
-  @commands.command(help = 'Kicks a member from server.')
-  @commands.cooldown(1, 3, commands.BucketType.user)
-  @has_permissions(kick_members=True)
-  async def kick(self, ctx, uid: int, *, reason=None):
-    member = await ctx.guild.fetch_member(uid)
-    server = ctx.guild
+  @app_commands.command(name = 'kick', description = 'Kicks a member from server.')
+  @app_commands.describe(member = 'The member to kick.', reason = 'The reason for kicking the member.')
+  @app_commands.checks.cooldown(1, 3)
+  @app_commands.checks.has_permissions(kick_members=True)
+  async def kick(self, interaction: discord.Interaction, member: discord.Member, *, reason: str = None):
+    server = interaction.guild
     dm = discord.Embed(
         description= f'***You are kicked from {server}*** | {reason}',
         colour=discord.Colour.orange())
     embed = discord.Embed(
       description= f'***:white_check_mark: {member} has been kicked*** | {reason}',
       colour=discord.Colour.gold())
-    await ctx.message.delete()
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
     await member.send(embed = dm)
     await member.kick(reason=reason)
 
     with open("log_channels.json", "r") as f:
         logger = json.load(f)
-    if str(ctx.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(ctx.guild.id)])
+    if str(interaction.guild.id) in logger:
+        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
         log = discord.Embed(
           color = discord.Color.dark_grey(),
           timestamp = datetime.datetime.now()
         )
         log.set_author(name = f'Kicked | {member}', icon_url = member.display_avatar.url)
-        log.add_field(name = 'User:', Value = f'<@{uid}>', inline = True)
-        log.add_field(name = 'Moderator:', value = ctx.author.mention, inline = True)
+        log.add_field(name = 'User:', Value = f'{member}', inline = True)
+        log.add_field(name = 'Moderator:', value = interaction.user, inline = True)
         log.add_field(name = 'Reason:', value = reason, inline = True)
         await logcnl.send(embed = log)
 
 
   @kick.error
-  async def kick_error(self, ctx, error):
-    if isinstance(error, commands.MissingPermissions):
+  async def kick_error(self, interaction: discord.Interaction, error):
+    if isinstance(error, app_commands.MissingPermissions):
       print('A fool tried to kick someone xD')
     else:
       embed = discord.Embed(
-        title= 'Command: i.kick',
-        description= 'Kicks a member\n\n**Cooldown:** *3 seconds*\n**Usage:** *i.kick [USER_ID] {reason}(Optional)*\n**Example:** *i.kick 920757063599132683 for making an example.*',
+        title= 'Command: /kick',
+        description= 'Kicks a member\n\n**Cooldown:** *3 seconds*\n**Usage:** */kick [MEMBER] {reason}(Optional)*\n**Example:** */kick @User for making an example.*',
         colour=discord.Colour.blue())
-      await ctx.send(embed=embed)
+      await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
-  @commands.command(help = 'Bans a member from server.')
-  @commands.cooldown(1, 3, commands.BucketType.user)
-  @has_permissions(ban_members=True)
-  async def ban(self, ctx, uid: int, *, reason=None):
-    member = await ctx.guild.fetch_member(uid)
-    server = ctx.guild
+  @app_commands.command(name = 'ban', description = 'Bans a member from server.')
+  @app_commands.describe(member = 'The member to ban.', reason = 'The reason for banning the member.')
+  @app_commands.checks.cooldown(1, 3)
+  @app_commands.checks.has_permissions(ban_members=True)
+  async def ban(self, interaction: discord.Interaction, member: discord.Member, *, reason: str = None):
+    server = interaction.guild
     dm = discord.Embed(
       description= f'***You are banned from {server}*** | {reason}',
       colour=discord.Colour.red())
     embed = discord.Embed(
       description= f'***:white_check_mark: {member} has been banned.*** | {reason}',
       colour=discord.Colour.red())
-    await ctx.message.delete()
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
     await member.send(embed = dm)
     await member.ban(reason=reason)
 
     with open("log_channels.json", "r") as f:
         logger = json.load(f)
-    if str(ctx.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(ctx.guild.id)])
+    if str(interaction.guild.id) in logger:
+        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
         log = discord.Embed(
           color = discord.Color.dark_grey(),
           timestamp = datetime.datetime.now()
         )
         log.set_author(name = f'Banned | {member}', icon_url = member.display_avatar.url)
-        log.add_field(name = 'User:', value = f'<@{uid}>', inline = True)
-        log.add_field(name = 'Moderator:', value = ctx.author.mention, inline = True)
+        log.add_field(name = 'User:', value = f'{member}', inline = True)
+        log.add_field(name = 'Moderator:', value = interaction.user, inline = True)
         log.add_field(name = 'Reason:', value = reason, inline = True)
         await logcnl.send(embed = log)
 
 
   @ban.error
-  async def ban_error(self, ctx, error):
-    if isinstance(error, commands.MissingPermissions):
+  async def ban_error(self, interaction: discord.Interaction, error):
+    if isinstance(error, app_commands.MissingPermissions):
       print('A dumbass tried to run ban command :kek:')
     else:
       embed = discord.Embed(
-        title='Command: i.ban',
-        description= 'Bans a member\n\n**Cooldown:** *3 seconds*\n**Usage:** *i.ban [USER_ID] {reason}(Optional)*\n**Example:** *i.ban 920757063599132683 for making an example.*',
+        title='Command: /ban',
+        description= 'Bans a member\n\n**Cooldown:** *3 seconds*\n**Usage:** */ban [MEMBER] {reason}(Optional)*\n**Example:** */ban @User for making an example.*',
         colour=discord.Colour.blue())
-      await ctx.send(embed=embed)
+      await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
-  @commands.command(help = 'Unbans a banned user.')
-  @commands.cooldown(1, 3, commands.BucketType.user)
-  @has_permissions(ban_members=True)
-  async def unban(self, ctx, uid):
-    banned_users = await ctx.guild.bans()
-    member = await self.client.fetch_user(uid)
+  @app_commands.command(name = 'unban', description = 'Unbans a banned user.')
+  @app_commands.checks.cooldown(1, 3.0)
+  @app_commands.checks.has_permissions(ban_members=True)
+  async def unban(self, interaction: discord.Interaction, member: discord.Member):
+    banned_users = await interaction.guild.bans()
 
     for ban_entry in banned_users:
       user = ban_entry.user
 
       if (user == member):
-        await ctx.guild.unban(user)
-        await ctx.message.delete()
+        await interaction.guild.unban(user)
         embed = discord.Embed(
           description= f'***:white_check_mark: {member} has been unbanned.***',
           colour=discord.Colour.green())
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
     with open("log_channels.json", "r") as f:
         logger = json.load(f)
-    if str(ctx.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(ctx.guild.id)])
+    if str(interaction.guild.id) in logger:
+        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
         log = discord.Embed(
           color = discord.Color.dark_grey(),
           timestamp = datetime.datetime.now()
         )
         log.set_author(name = f'Unbanned | {member}', icon_url = member.display_avatar.url)
-        log.add_field(name = 'User:', value = f'<@{uid}>', inline = True)
-        log.add_field(name = 'Moderator:', value = ctx.author.mention, inline = True)
+        log.add_field(name = 'User:', value = f'{member}', inline = True)
+        log.add_field(name = 'Moderator:', value = interaction.user.mention, inline = True)
         await logcnl.send(embed = log)
 
 
   @unban.error
-  async def unban_error(self, ctx, error):
-      if isinstance(error, commands.MissingPermissions):
+  async def unban_error(self, interaction: discord.Interaction, error):
+      if isinstance(error, app_commands.MissingPermissions):
           print('A dumbass tried again to unban an user :kekw:')
       else:
           embed = discord.Embed(
-              title='Command: i.unban',
+              title='Command: /unban',
               description=
-              'Unbans a banned user\n\n**Cooldown:** *3 seconds*\n**Usage:** *i.unban [USER_ID]*\n**Example:** *iunban 920757063599132683*',
+              'Unbans a banned user\n\n**Cooldown:** *3 seconds*\n**Usage:** */unban [MEMBER]*\n**Example:** */unban @User*',
               colour=discord.Colour.blue())
-          await ctx.send(embed=embed)
+          await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(client):

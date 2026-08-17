@@ -184,12 +184,12 @@ class Misc(commands.Cog):
       helpEmbed.set_author(name = 'Commands', icon_url = self.client.user.display_avatar.url)
       helpEmbed.add_field(name = 'Moderation', value = '`/lang`, `/topic`, `/purge`, `/kick`, `/ban`, `/unban`, `notice`, `announce`', inline = False)
       helpEmbed.add_field(name = 'Settings', value = '`/serverinfo`, `/log`, `/config`', inline = False)
-      helpEmbed.add_field(name = 'Music', value = '`/join`, `/leave`, `/play`, `/queue`, `/pause`, `/resume`, `/skip`, `/stop`', inline = False)
+    #  helpEmbed.add_field(name = 'Music', value = '`/join`, `/leave`, `/play`, `/queue`, `/pause`, `/resume`, `/skip`, `/stop`', inline = False)
       helpEmbed.add_field(name = 'Misc', value = '`/help`, `/ping`, `/stats`, `/avatar`, `/dice`', inline = False)
       helpEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
   
       await interaction.response.send_message(embed = helpEmbed)
-      await interaction.followup.send('Need more help? Join the official support server, if you can\'t understand something: https://discord.gg/F9N8DmsJyz')
+      await interaction.channel.send('Need more help? Join the official support server, if you can\'t understand something: https://discord.gg/F9N8DmsJyz')
 
 
 async def setup(client):

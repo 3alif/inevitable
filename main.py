@@ -17,6 +17,7 @@ VERSION = '0.5'
 class MyBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
+        intents.voice_states = True
         intents.members = True
         intents.message_content = True
         intents.presences = False
@@ -35,6 +36,19 @@ class MyBot(commands.Bot):
     async def on_ready(self):
         await self.change_presence(activity=discord.Game(name='/help'))
         await self.tree.sync()
+        if not discord.opus.is_loaded():
+            try:
+                discord.opus.load_opus('libopus.so.0')
+                print("Opus loaded successfully for voice support.")
+            except Exception as e:
+                try:
+                    from ctypes.util import find_library
+                    opus_path = find_library('opus')
+                    if opus_path:
+                        discord.opus.load_opus(opus_path)
+                        print(f"Opus loaded via find_library: {opus_path}")
+                except Exception as inner_e:
+                    print(f"Opus loading completely skipped or handled by OS: {inner_e}")
         print(f"imma ready in {len(self.guilds)} servers")
 
 

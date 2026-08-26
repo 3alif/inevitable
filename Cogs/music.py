@@ -57,6 +57,34 @@ class Music(commands.Cog):
   def __init__(self, client):
     self.client = client
 
+  def play_next(self, interaction: discord.Interaction):
+    global queue, for_queue
+    
+    voice_client = interaction.guild.voice_client
+    if not voice_client or len(queue) == 0:
+        return
+
+    try:
+        current_queue = queue.pop(0)
+        for_queue.pop(0)
+        
+        coro = YTDLSource.from_url(current_queue, loop=self.client.loop, stream=True)
+        future = asyncio.run_coroutine_threadsafe(coro, self.client.loop)
+        player = future.result()
+
+        voice_client.play(player, after=lambda e: self.play_next(interaction))
+        
+        embed = discord.Embed(
+            title='Started Playing:',
+            description=f'{player.title}\n\nAll your votes inspire us. [Vote Here](https://top.gg/bot/920757063599132683/vote)',
+            color=discord.Colour.greyple()
+        )
+        if hasattr(player, 'thumbnail') and player.thumbnail:
+            embed.set_thumbnail(url=player.thumbnail)
+            
+        asyncio.run_coroutine_threadsafe(interaction.channel.send(embed=embed), self.client.loop)
+    except Exception as e:
+        print(f'Queue error: {e}')
 
   @app_commands.command(name = 'join', description = 'Connects to your voice channel.')
   async def join(self, interaction: discord.Interaction):
@@ -64,12 +92,12 @@ class Music(commands.Cog):
       if interaction.user.voice:
           if not interaction.guild.voice_client:
               user_channel = interaction.user.voice.channel
-              await user_channel.connect()
-              await interaction.response.send_message('Successfully joined the voice channel.')
+              await user_channel.connect(self_deaf = True)
+              await interaction.followup.send('Successfully joined the voice channel.')
           else:
-              await interaction.response.send_message('I am already in a voice channel.')
+              await interaction.followup.send('I am already in a voice channel.')
       else:
-          await interaction.response.send_message('You need to join in a voice channel first.')
+          await interaction.followup.send('You need to join in a voice channel first.')
 
 
   @app_commands.command(name = 'leave', description = 'Disconnects from your voice channel.')
@@ -96,41 +124,17 @@ class Music(commands.Cog):
       await interaction.response.defer()
       if not interaction.guild.voice_client:
           channel = interaction.user.voice.channel
-          await channel.connect()
+          await channel.connect(self_deaf = True)
       try:
-        last = await YTDLSource.from_url(queue, loop = self.client.loop, stream = True)
+        last = await YTDLSource.from_url(query, loop = self.client.loop, stream = True)
         queue.append(query)
         for_queue.append(f'{last.title} | `Requested by: {interaction.user}`')
         await interaction.channel.send(f'Track added to queue: **{last.title}**')
       except Exception as e:
         return await interaction.channel.send(f'Error loading track: {str(e)}')
           
-      while queue:
-        voice_client = interaction.guild.voice_client
-        if not voice_client:
-            break
-        if voice_client.is_playing() or voice_client.is_paused():
-            await asyncio.sleep(2)
-            continue
-
-        try:
-            current_queue = queue.pop(0)
-            for_queue.pop(0)
-            player = await YTDLSource.from_url(current_queue, loop=self.client.loop, stream=True)
-            voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
-            
-            embed = discord.Embed(
-              title = 'Started Playing:',
-              description = f'{player.title}\n\nAll your votes inspire us. [Vote Here](https://top.gg/bot/920757063599132683/vote)',
-              color = discord.Colour.greyple()
-            )
-            if player.thumbnail:
-               embed.set_thumbnail(url = player.thumbnail)
-            await interaction.channel.send(embed = embed)
-        except Exception as e:
-            print(f'Queue error: {e}')
-            break
-
+      if not interaction.guild.voice_client.is_playing() and not interaction.guild.voice_client.is_paused():
+        self.play_next(interaction)
 
   @app_commands.command(name = 'queue', description = 'Shows the music queue.')
   async def queue(self, interaction: discord.Interaction):
@@ -145,8 +149,8 @@ class Music(commands.Cog):
           color = discord.Color.greyple(),
           timestamp = datetime.datetime.utcnow()
         )
-        queuembed.set_author(name = interaction.guild, icon_url = interaction.guild.icon_url)
-        queuembed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.avatar_url)
+        queuembed.set_author(name = interaction.guild.name, icon_url = interaction.guild.icon.url)
+        queuembed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.avatar.url)
         await interaction.response.send_message(embed = queuembed)
     else:
       await interaction.response.send_message('You need to join in a voice channel first.')

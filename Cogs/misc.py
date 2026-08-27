@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
-from discord import Optional, app_commands
+from discord import app_commands
+from typing import Optional
 import datetime
 import time
 import psutil

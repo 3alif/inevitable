@@ -6,26 +6,11 @@ import yt_dlp as youtube_dl
 import datetime
 
 
-youtube_dl.utils.bug_reports_message = lambda: ''
+youtube_dl.utils.bug_reports_message = lambda *args, **kwargs: ''
 FFMPEG_OPTIONS = {
    'options': '-vn',
    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
 }
-
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'restrictfilenames': True,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0'
-}
-
-ytdl = youtube_dl.YoutubeDL(ydl_opts)
 
 queue = []
 for_queue = []
@@ -43,13 +28,39 @@ class  YTDLSource(discord.PCMVolumeTransformer):
   @classmethod
   async def from_url(cls, url, *, loop = None, stream = False):
       loop = loop or asyncio.get_event_loop()
-      data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download = not stream))
+
+      ydl_opts = {
+          'format': 'bestaudio/best',
+          'restrictfilenames': True,
+          'noplaylist': True,
+          'nocheckcertificate': True,
+          'ignoreerrors': False,
+          'logtostderr': False,
+          'quiet': True,
+          'no_warnings': True,
+          'default_search': 'auto',
+          'source_address': '0.0.0.0',
+          'extract_flat': False,
+          'skip_download': True,
+          'cookiefile': 'cookies.txt',
+          'extractor_args': {
+             'youtube': {
+                'player_client': ['web_safari,web_embedded,-tv_downgraded']
+             }
+          }
+      }
+
+      def _extract_data(*args, **kwargs):
+         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+           return ydl.extract_info(url, download = not stream)
+
+      data = await loop.run_in_executor(None, _extract_data)
 
       if 'entries' in data:
-            # take first item from a playlist
-            data = data['entries'][0]
+            data = data['entries'][0] if isinstance(data['entries'], list) else data['entries']
 
-      filename = data['url'] if stream else ytdl.prepare_filename(data)
+      with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        filename = data['url'] if stream else ydl.prepare_filename(data)
       return cls(discord.FFmpegPCMAudio(filename, **FFMPEG_OPTIONS), data=data)
 
 
@@ -129,9 +140,9 @@ class Music(commands.Cog):
         last = await YTDLSource.from_url(query, loop = self.client.loop, stream = True)
         queue.append(query)
         for_queue.append(f'{last.title} | `Requested by: {interaction.user}`')
-        await interaction.channel.send(f'Track added to queue: **{last.title}**')
+        await interaction.followup.send(f'Track added to queue: **{last.title}**')
       except Exception as e:
-        return await interaction.channel.send(f'Error loading track: {str(e)}')
+        return await interaction.followup.send(f'Error loading track: {str(e)}')
           
       if not interaction.guild.voice_client.is_playing() and not interaction.guild.voice_client.is_paused():
         self.play_next(interaction)

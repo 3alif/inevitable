@@ -164,34 +164,34 @@ class MyBot(commands.Bot):
                 await logcnl.send(embed = log)  # type: ignore
 
 
-    async def on_voice_state_update(self, member, before, after):
-        with open("log_channels.json", "r") as f:
-            logger = json.load(f)
+    # async def on_voice_state_update(self, member, before, after):
+    #     with open("log_channels.json", "r") as f:
+    #         logger = json.load(f)
 
-        channel = before.channel or after.channel
+    #     channel = before.channel or after.channel
 
-        if str(channel.guild.id) in logger:
-            logcnl = self.get_channel(logger[str(channel.guild.id)])
-            if logcnl and hasattr(logcnl, 'send'):
-                des = ''
-                if before.channel is not None:
-                    if after.channel is not None and not before.channel == after.channel:
-                        des = f'{member.mention} switched to {after.channel.mention} from {before.channel.mention}'
-                    elif after.channel is None:
-                        des = f'{member.mention} left voice channel {before.channel.mention}'
-                else:
-                    if after.channel is not None:
-                        des = f'{member.mention} joined voice channel {after.channel.mention}'
+    #     if str(channel.guild.id) in logger:
+    #         logcnl = self.get_channel(logger[str(channel.guild.id)])
+    #         if logcnl and hasattr(logcnl, 'send'):
+    #             des = ''
+    #             if before.channel is not None:
+    #                 if after.channel is not None and not before.channel == after.channel:
+    #                     des = f'{member.mention} switched to {after.channel.mention} from {before.channel.mention}'
+    #                 elif after.channel is None:
+    #                     des = f'{member.mention} left voice channel {before.channel.mention}'
+    #             else:
+    #                 if after.channel is not None:
+    #                     des = f'{member.mention} joined voice channel {after.channel.mention}'
 
-                if des:
-                    log = discord.Embed(
-                        description=des,
-                        color=discord.Color.dark_grey(),
-                    timestamp=datetime.datetime.now()
-                    )
-                    log.set_author(name = member, icon_url = member.avatar_url)
-                    log.set_footer(text = f'ID: {member.id}')
-                    await logcnl.send(embed = log)  # type: ignore
+    #             if des:
+    #                 log = discord.Embed(
+    #                     description=des,
+    #                     color=discord.Color.dark_grey(),
+    #                 timestamp=datetime.datetime.now()
+    #                 )
+    #                 log.set_author(name = member, icon_url = member.avatar_url)
+    #                 log.set_footer(text = f'ID: {member.id}')
+    #                 await logcnl.send(embed = log)
 
 
 

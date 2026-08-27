@@ -1,4 +1,5 @@
-discord.py==2.6.4
+discord.py==2.7.1
+python-davey
 Flask==3.1.2
 psutil==7.2.0
 python-dotenv==1.2.1

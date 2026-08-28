@@ -182,20 +182,34 @@ class Moderation(commands.Cog):
 
 
   @app_commands.command(name = 'unban', description = 'Unbans a banned user.')
+  @app_commands.describe(user_id = 'The ID of the user to unban.')
   @app_commands.checks.cooldown(1, 3.0)
   @app_commands.checks.has_permissions(ban_members=True)
-  async def unban(self, interaction: discord.Interaction, member: discord.Member):
-    banned_users = await interaction.guild.bans()
+  async def unban(self, interaction: discord.Interaction, user_id: str):
+    await interaction.response.defer()
+
+    try:
+       target_id = int(user_id)
+    except ValueError:
+       embed = discord.Embed(
+          description = "❌ Enter a valid user ID."
+       )
+       await interaction.followup.send(embed=embed)
+       return
+    
+    banned_users = [ban_entry async for ban_entry in interaction.guild.bans()]
 
     for ban_entry in banned_users:
       user = ban_entry.user
 
-      if (user == member):
+      if user.id == target_id:
         await interaction.guild.unban(user)
+
         embed = discord.Embed(
-          description= f'***:white_check_mark: {member} has been unbanned.***',
+          description= f'***:white_check_mark: {user} has been unbanned.***',
           colour=discord.Colour.green())
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
+        return
 
     # with open("log_channels.json", "r") as f:
     #     logger = json.load(f)

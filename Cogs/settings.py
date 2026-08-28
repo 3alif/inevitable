@@ -39,38 +39,42 @@ class Settings(commands.Cog):
 
   @app_commands.command(name = 'serverinfo', description = 'Shows information of the server.')
   async def serverinfo(self, interaction: discord.Interaction):
-    datecreated = interaction.guild.created_at.strftime("%d-%m-%Y")
+    await interaction.response.defer()
 
-    category_channels = []
-    for category in interaction.guild.channels:
-      if str(category.type) == 'category':
-        category_channels.append(category)
-    categories = len(category_channels)
+    guild = interaction.guild
+    datecreated = guild.created_at.strftime("%d-%m-%Y")
 
-    role_list = []
-    for role in interaction.guild.roles:
-      role_list.append(role.name)
-    roles = ', '.join(role_list)
+    role_list = [role.name for role in guild.roles if role.name != "@everyone"]
     role_count = len(role_list)
+
+    roles = ', '.join(role_list)
+    if len(roles) > 1024:
+      roles = roles[:1020] + '...'
 
     embed = discord.Embed(
       color = discord.Color.purple()
     )
 
-    embed.set_author(name = interaction.guild, icon_url = interaction.guild.icon_url)
-    embed.set_footer(text = f'ID: {interaction.guild.id} | Created On • {datecreated}')
+    if guild.icon:
+      embed.set_author(name = guild.name, icon_url = guild.icon.url)
+      embed.set_thumbnail(url = guild.icon.url)
+    else:
+      embed.set_author(name = guild.name)
+
+    embed.set_footer(text = f'ID: {guild.id} | Created On • {datecreated}')
+
     embed.set_thumbnail(url = interaction.guild.icon_url)
 
     embed.add_field(name = 'Owner', value = interaction.guild.owner, inline = True)
     embed.add_field(name = 'Members', value = interaction.guild.member_count, inline = True)
     embed.add_field(name = 'Roles', value = role_count, inline = True)
-    embed.add_field(name = 'Categories', value = categories, inline = True)
+    embed.add_field(name = 'Categories', value = len(guild.categories), inline = True)
     embed.add_field(name = 'Text Channels', value = len(interaction.guild.text_channels), inline = True)
     embed.add_field(name = 'Voice Channels', value = len(interaction.guild.voice_channels), inline = True)
-    if interaction.user.guild_permissions.administrator:
+    if interaction.user.guild_permissions.administrator and role_list:
       embed.add_field(name = 'Role List', value = roles, inline = False)
 
-    await interaction.response.send_message(embed = embed)
+    await interaction.followup.send(embed = embed)
 
 
   # @app_commands.command(name = 'config', description = 'Shows configuration information of the server.')

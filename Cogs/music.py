@@ -76,6 +76,8 @@ class  YTDLSource(discord.PCMVolumeTransformer):
 class Music(commands.Cog):
   def __init__(self, client):
     self.client = client
+    self.queue = []
+    self.for_queue = []
 
   async def play_next(self, interaction: discord.Interaction):
     if len(self.queue) == 0:
@@ -165,14 +167,13 @@ class Music(commands.Cog):
 
   @app_commands.command(name = 'queue', description = 'Shows the music queue.')
   async def queue(self, interaction: discord.Interaction):
-    global for_queue
     if interaction.user.voice:
-      if len(for_queue) == 0:
+      if len(self.for_queue) == 0:
         await interaction.response.send_message('Empty queue.')
       else:
         queuembed = discord.Embed(
           title = 'Queue',
-          description = '\n'.join(for_queue),
+          description = '\n'.join(self.for_queue),
           color = discord.Color.greyple(),
           timestamp = datetime.datetime.utcnow()
         )

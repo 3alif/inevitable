@@ -4,6 +4,8 @@ from discord import app_commands
 import asyncio
 import yt_dlp as youtube_dl
 import datetime
+import sys
+import traceback
 
 
 youtube_dl.utils.bug_reports_message = lambda *args, **kwargs: ''
@@ -11,9 +13,6 @@ FFMPEG_OPTIONS = {
    'options': '-vn',
    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
 }
-
-queue = []
-for_queue = []
 
 
 class  YTDLSource(discord.PCMVolumeTransformer):
@@ -57,20 +56,19 @@ class  YTDLSource(discord.PCMVolumeTransformer):
       data = await loop.run_in_executor(None, _extract_data)
 
       if 'entries' in data:
-            data = data['entries'][0] if isinstance(data['entries'], list) else data['entries']
+         data = data['entries'][0] if isinstance(data['entries'], list) else data['entries']
 
       before_opts = FFMPEG_OPTIONS['before_options']
-      if 'http_headers' in data:
-         headers_str = "".join([f"{k}: {v}\r\n" for k, v in data['http_headers'].items()])
-         before_opts += f' -headers \"{headers_str}\"'
+      user_agent = data.get('http_headers', {}).get('User-Agent')
+      if user_agent:
+         before_opts += f' -user_agent "{user_agent}"'
 
       ffmpeg_opts = {
          'before_options': before_opts,
          'options': FFMPEG_OPTIONS['options']
       }
       
-      with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        filename = data['url'] if stream else ydl.prepare_filename(data)
+      filename = data['url'] if stream else data.get('filename')
       return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_opts), data=data)
 
 
@@ -79,23 +77,31 @@ class Music(commands.Cog):
     self.client = client
 
   async def play_next(self, interaction: discord.Interaction):
-    global queue, for_queue
+    if len(self.queue) == 0:
+       return
     
     voice_client = interaction.guild.voice_client
-    if not voice_client or len(queue) == 0:
+    if not voice_client or not voice_client.is_connected():
         return
 
     try:
-        player = queue.pop(0)
-        for_queue.pop(0)
+        query = self.queue.pop(0)
+        self.for_queue.pop(0)
+
+        print(f"[MUSIC] Fetching audio for: {query}", flush=True)
+        player = await YTDLSource.from_url(query, loop=self.client.loop, stream=True)
 
         def after_playing(error):
             if error:
-               print(f'Player error: {error}')
-            coro = self.play_next(interaction)
-            asyncio.run_coroutine_threadsafe(coro, self.client.loop)
+               print(f"[MUSIC ERROR] Playback error: {error}", flush=True)
+            fut = asyncio.run_coroutine_threadsafe(self.play_next(interaction), self.client.loop)
+            try:
+               fut.result()
+            except Exception as ex:
+               print(f"[MUSIC ERROR] Queue transition error: {ex}", flush=True)
 
         voice_client.play(player, after=after_playing)
+        print(f"[MUSIC] Now playing: {player.title}", flush=True)
         
         embed = discord.Embed(
             title='Started Playing:',
@@ -107,7 +113,9 @@ class Music(commands.Cog):
             
         await interaction.channel.send(embed=embed)
     except Exception as e:
-        print(f'Queue error: {e}')
+        print(f"[MUSIC ERROR] Failed in play_next: {e}", flush=True)
+        traceback.print_exc(file=sys.stdout)
+        sys.stdout.flush()
 
   @app_commands.command(name = 'join', description = 'Connects to your voice channel.')
   async def join(self, interaction: discord.Interaction):
@@ -140,21 +148,16 @@ class Music(commands.Cog):
   async def play(self, interaction: discord.Interaction, query: str):
       if not interaction.user.voice:
           return await interaction.response.send_message('You need to join in a voice channel first.')
-      
-      global queue
-      global for_queue
 
       await interaction.response.defer()
+
       if not interaction.guild.voice_client:
           channel = interaction.user.voice.channel
           await channel.connect(self_deaf = True)
-      try:
-        player = await YTDLSource.from_url(query, loop = self.client.loop, stream = True)
-        queue.append(player)
-        for_queue.append(f'{player.title} | `Requested by: {interaction.user}`')
-        await interaction.followup.send(f'Track added to queue: **{player.title}**')
-      except Exception as e:
-        return await interaction.followup.send(f'Error loading track: {str(e)}')
+
+      self.queue.append(query)
+      self.for_queue.append(f'{query} | `Requested by: {interaction.user}`')
+      await interaction.followup.send(f'Track added to queue: **{query}**')
           
       if not interaction.guild.voice_client.is_playing() and not interaction.guild.voice_client.is_paused():
         self.play_next(interaction)

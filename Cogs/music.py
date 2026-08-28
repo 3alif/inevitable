@@ -38,6 +38,7 @@ class  YTDLSource(discord.PCMVolumeTransformer):
           'quiet': True,
           'no_warnings': True,
           'default_search': 'scsearch',
+          'extractor_retries': 1,
           'source_address': '0.0.0.0',
           'extract_flat': False,
           'skip_download': True,
@@ -160,7 +161,7 @@ class Music(commands.Cog):
       await interaction.followup.send(f'Track added to queue: **{query}**')
           
       if not interaction.guild.voice_client.is_playing() and not interaction.guild.voice_client.is_paused():
-        self.play_next(interaction)
+        asyncio.create_task(self.play_next(interaction))
 
   @app_commands.command(name = 'queue', description = 'Shows the music queue.')
   async def queue(self, interaction: discord.Interaction):

@@ -42,12 +42,12 @@ class  YTDLSource(discord.PCMVolumeTransformer):
           'source_address': '0.0.0.0',
           'extract_flat': False,
           'skip_download': True,
-          'cookiefile': 'cookies.txt',
-          'extractor_args': {
-             'youtube': {
-                'player_client': ['web_safari,web_embedded,-tv_downgraded']
-             }
-          }
+          # 'cookiefile': 'cookies.txt',
+          # 'extractor_args': {
+          #    'youtube': {
+          #       'player_client': ['web_safari,web_embedded,-tv_downgraded']
+          #    }
+          # }
       }
 
       def _extract_data(*args, **kwargs):
@@ -59,16 +59,26 @@ class  YTDLSource(discord.PCMVolumeTransformer):
       if 'entries' in data:
             data = data['entries'][0] if isinstance(data['entries'], list) else data['entries']
 
+      before_opts = FFMPEG_OPTIONS['before_options']
+      if 'http_headers' in data:
+         headers_str = "".join([f"{k}: {v}\r\n" for k, v in data['http_headers'].items()])
+         before_opts += f' -headers \"{headers_str}\"'
+
+      ffmpeg_opts = {
+         'before_options': before_opts,
+         'options': FFMPEG_OPTIONS['options']
+      }
+      
       with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         filename = data['url'] if stream else ydl.prepare_filename(data)
-      return cls(discord.FFmpegPCMAudio(filename, **FFMPEG_OPTIONS), data=data)
+      return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_opts), data=data)
 
 
 class Music(commands.Cog):
   def __init__(self, client):
     self.client = client
 
-  def play_next(self, interaction: discord.Interaction):
+  async def play_next(self, interaction: discord.Interaction):
     global queue, for_queue
     
     voice_client = interaction.guild.voice_client
@@ -76,14 +86,16 @@ class Music(commands.Cog):
         return
 
     try:
-        current_queue = queue.pop(0)
+        player = queue.pop(0)
         for_queue.pop(0)
-        
-        coro = YTDLSource.from_url(current_queue, loop=self.client.loop, stream=True)
-        future = asyncio.run_coroutine_threadsafe(coro, self.client.loop)
-        player = future.result()
 
-        voice_client.play(player, after=lambda e: self.play_next(interaction))
+        def after_playing(error):
+            if error:
+               print(f'Player error: {error}')
+            coro = self.play_next(interaction)
+            asyncio.run_coroutine_threadsafe(coro, self.client.loop)
+
+        voice_client.play(player, after=after_playing)
         
         embed = discord.Embed(
             title='Started Playing:',
@@ -93,7 +105,7 @@ class Music(commands.Cog):
         if hasattr(player, 'thumbnail') and player.thumbnail:
             embed.set_thumbnail(url=player.thumbnail)
             
-        asyncio.run_coroutine_threadsafe(interaction.channel.send(embed=embed), self.client.loop)
+        await interaction.channel.send(embed=embed)
     except Exception as e:
         print(f'Queue error: {e}')
 
@@ -137,10 +149,10 @@ class Music(commands.Cog):
           channel = interaction.user.voice.channel
           await channel.connect(self_deaf = True)
       try:
-        last = await YTDLSource.from_url(query, loop = self.client.loop, stream = True)
-        queue.append(query)
-        for_queue.append(f'{last.title} | `Requested by: {interaction.user}`')
-        await interaction.followup.send(f'Track added to queue: **{last.title}**')
+        player = await YTDLSource.from_url(query, loop = self.client.loop, stream = True)
+        queue.append(player)
+        for_queue.append(f'{player.title} | `Requested by: {interaction.user}`')
+        await interaction.followup.send(f'Track added to queue: **{player.title}**')
       except Exception as e:
         return await interaction.followup.send(f'Error loading track: {str(e)}')
           
@@ -172,31 +184,8 @@ class Music(commands.Cog):
     if interaction.user.voice:
       if interaction.guild.voice_client:
         if interaction.guild.voice_client.is_playing():
-          global queue
-          global for_queue
           interaction.guild.voice_client.stop()
           await interaction.response.send_message('⏭️')
-          while len(queue) > 0:
-            try:
-              await asyncio.sleep(2)
-              pass
-            except AttributeError:
-              pass
-            try:
-              player = await YTDLSource.from_url(queue[0], loop = self.client.loop, stream=True)
-              interaction.guild.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
-              queue.pop(0)
-              tit, req = for_queue[0].split('|')
-              for_queue.pop(0)
-              embed = discord.Embed(
-                title = 'Started Playing:',
-                description = f'{player.title}\n\nAll your votes inspire us. [Vote Here](https://top.gg/bot/920757063599132683/vote)',
-                color = discord.Colour.greyple()
-                )
-              embed.set_image(url = player.thumbnail)
-              await interaction.channel.send(embed = embed)
-            except:
-              break
         else:
           await interaction.response.send_message('Nothing is being played right now.')
       else:

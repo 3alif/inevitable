@@ -38,7 +38,7 @@ class  YTDLSource(discord.PCMVolumeTransformer):
           'logtostderr': False,
           'quiet': True,
           'no_warnings': True,
-          'default_search': 'auto',
+          'default_search': 'scsearch',
           'source_address': '0.0.0.0',
           'extract_flat': False,
           'skip_download': True,

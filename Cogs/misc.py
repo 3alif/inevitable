@@ -142,23 +142,23 @@ class Misc(commands.Cog):
       setEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
       await interaction.response.send_message(embed = setEmbed)
 
-    # elif category == 'music' or category == 'Music':
-    #   musicEmbed = discord.Embed(
-    #     title = 'Music Commands',
-    #     color = discord.Color.gold(),
-    #     timestamp = datetime.datetime.now()
-    #   )
-    #   musicEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
-    #   musicEmbed.add_field(name = 'join', value = '```Usage: /join```', inline = False)
-    #   musicEmbed.add_field(name = 'leave', value = '```Usage: /leave```', inline = False)
-    #   musicEmbed.add_field(name = 'play', value = '```Usage: /play [song]```', inline = False)
-    #   musicEmbed.add_field(name = 'queue', value = '```Usage: /queue```', inline = False)
-    #   musicEmbed.add_field(name = 'pause', value = '```Usage: /pause```', inline = False)
-    #   musicEmbed.add_field(name = 'resume', value = '```Usage: /resume```', inline = False)
-    #   musicEmbed.add_field(name = 'skip', value = '```Usage: /skip```', inline = False)
-    #   musicEmbed.add_field(name = 'stop', value = '```Usage: /stop```', inline = False)
-    #   musicEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
-    #   await ctx.send(embed = musicEmbed)
+    elif category == 'music' or category == 'Music':
+      musicEmbed = discord.Embed(
+        title = 'Music Commands',
+        color = discord.Color.gold(),
+        timestamp = datetime.datetime.now()
+      )
+      musicEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
+      musicEmbed.add_field(name = 'join', value = '```Usage: /join```', inline = False)
+      musicEmbed.add_field(name = 'leave', value = '```Usage: /leave```', inline = False)
+      musicEmbed.add_field(name = 'play', value = '```Usage: /play [song]```', inline = False)
+      musicEmbed.add_field(name = 'queue', value = '```Usage: /queue```', inline = False)
+      musicEmbed.add_field(name = 'skip', value = '```Usage: /skip```', inline = False)
+      musicEmbed.add_field(name = 'pause', value = '```Usage: /pause```', inline = False)
+      musicEmbed.add_field(name = 'resume', value = '```Usage: /resume```', inline = False)
+      musicEmbed.add_field(name = 'stop', value = '```Usage: /stop```', inline = False)
+      musicEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
+      await interaction.response.send_message(embed = musicEmbed)
 
     elif category == 'misc' or category == 'Misc':
       miscEmbed = discord.Embed(
@@ -184,8 +184,8 @@ class Misc(commands.Cog):
   
       helpEmbed.set_author(name = 'Commands', icon_url = self.client.user.display_avatar.url)
       helpEmbed.add_field(name = 'Moderation', value = '`/lang`, `/topic`, `/purge`, `/kick`, `/ban`, `/unban`, `notice`, `announce`', inline = False)
-      helpEmbed.add_field(name = 'Settings', value = '`/serverinfo`, `/log`, `/config`', inline = False)
-    #  helpEmbed.add_field(name = 'Music', value = '`/join`, `/leave`, `/play`, `/queue`, `/pause`, `/resume`, `/skip`, `/stop`', inline = False)
+      helpEmbed.add_field(name = 'Settings', value = '`/serverinfo`', inline = False) # removed /config and /log
+      helpEmbed.add_field(name = 'Music', value = '`/join`, `/leave`, `/play`, `/queue`, `/pause`, `/resume`, `/skip`, `/stop`', inline = False)
       helpEmbed.add_field(name = 'Misc', value = '`/help`, `/ping`, `/stats`, `/avatar`, `/dice`', inline = False)
       helpEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
   

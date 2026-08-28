@@ -2,7 +2,6 @@ import discord
 import json
 from discord.ext import commands
 from discord import app_commands
-from discord.ext.commands import has_permissions
 import datetime
 
 
@@ -112,19 +111,19 @@ class Moderation(commands.Cog):
     await member.send(embed = dm)
     await member.kick(reason=reason)
 
-    with open("log_channels.json", "r") as f:
-        logger = json.load(f)
-    if str(interaction.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
-        log = discord.Embed(
-          color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.now()
-        )
-        log.set_author(name = f'Kicked | {member}', icon_url = member.display_avatar.url)
-        log.add_field(name = 'User:', Value = f'{member}', inline = True)
-        log.add_field(name = 'Moderator:', value = interaction.user, inline = True)
-        log.add_field(name = 'Reason:', value = reason, inline = True)
-        await logcnl.send(embed = log)
+    # with open("log_channels.json", "r") as f:
+    #     logger = json.load(f)
+    # if str(interaction.guild.id) in logger:
+    #     logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
+    #     log = discord.Embed(
+    #       color = discord.Color.dark_grey(),
+    #       timestamp = datetime.datetime.now()
+    #     )
+    #     log.set_author(name = f'Kicked | {member}', icon_url = member.display_avatar.url)
+    #     log.add_field(name = 'User:', Value = f'{member}', inline = True)
+    #     log.add_field(name = 'Moderator:', value = interaction.user, inline = True)
+    #     log.add_field(name = 'Reason:', value = reason, inline = True)
+    #     await logcnl.send(embed = log)
 
 
   @kick.error
@@ -155,19 +154,19 @@ class Moderation(commands.Cog):
     await member.send(embed = dm)
     await member.ban(reason=reason)
 
-    with open("log_channels.json", "r") as f:
-        logger = json.load(f)
-    if str(interaction.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
-        log = discord.Embed(
-          color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.now()
-        )
-        log.set_author(name = f'Banned | {member}', icon_url = member.display_avatar.url)
-        log.add_field(name = 'User:', value = f'{member}', inline = True)
-        log.add_field(name = 'Moderator:', value = interaction.user, inline = True)
-        log.add_field(name = 'Reason:', value = reason, inline = True)
-        await logcnl.send(embed = log)
+    # with open("log_channels.json", "r") as f:
+    #     logger = json.load(f)
+    # if str(interaction.guild.id) in logger:
+    #     logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
+    #     log = discord.Embed(
+    #       color = discord.Color.dark_grey(),
+    #       timestamp = datetime.datetime.now()
+    #     )
+    #     log.set_author(name = f'Banned | {member}', icon_url = member.display_avatar.url)
+    #     log.add_field(name = 'User:', value = f'{member}', inline = True)
+    #     log.add_field(name = 'Moderator:', value = interaction.user, inline = True)
+    #     log.add_field(name = 'Reason:', value = reason, inline = True)
+    #     await logcnl.send(embed = log)
 
 
   @ban.error
@@ -198,18 +197,18 @@ class Moderation(commands.Cog):
           colour=discord.Colour.green())
         await interaction.response.send_message(embed=embed)
 
-    with open("log_channels.json", "r") as f:
-        logger = json.load(f)
-    if str(interaction.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
-        log = discord.Embed(
-          color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.now()
-        )
-        log.set_author(name = f'Unbanned | {member}', icon_url = member.display_avatar.url)
-        log.add_field(name = 'User:', value = f'{member}', inline = True)
-        log.add_field(name = 'Moderator:', value = interaction.user.mention, inline = True)
-        await logcnl.send(embed = log)
+    # with open("log_channels.json", "r") as f:
+    #     logger = json.load(f)
+    # if str(interaction.guild.id) in logger:
+    #     logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
+    #     log = discord.Embed(
+    #       color = discord.Color.dark_grey(),
+    #       timestamp = datetime.datetime.now()
+    #     )
+    #     log.set_author(name = f'Unbanned | {member}', icon_url = member.display_avatar.url)
+    #     log.add_field(name = 'User:', value = f'{member}', inline = True)
+    #     log.add_field(name = 'Moderator:', value = interaction.user.mention, inline = True)
+    #     await logcnl.send(embed = log)
 
 
   @unban.error

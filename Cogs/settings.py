@@ -63,8 +63,6 @@ class Settings(commands.Cog):
 
     embed.set_footer(text = f'ID: {guild.id} | Created On • {datecreated}')
 
-    embed.set_thumbnail(url = interaction.guild.icon_url)
-
     embed.add_field(name = 'Owner', value = interaction.guild.owner, inline = True)
     embed.add_field(name = 'Members', value = interaction.guild.member_count, inline = True)
     embed.add_field(name = 'Roles', value = role_count, inline = True)

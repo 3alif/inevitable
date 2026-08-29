@@ -11,7 +11,7 @@ from server import online
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
-VERSION = '0.6'
+VERSION = '0.7'
 
 
 class MyBot(commands.Bot):

@@ -6,7 +6,6 @@ import datetime
 import time
 import psutil
 import platform
-import random
 from main import VERSION
 
 
@@ -18,12 +17,6 @@ class Misc(commands.Cog):
   @app_commands.command(name = 'ping', description = 'Shows the bot\'s latency.')
   async def ping(self, interaction: discord.Interaction):
     await interaction.response.send_message(f"Pong! :smirk: `{round(self.client.latency * 1000)} ms`")
-
-
-  @app_commands.command(name = 'dice', description = 'Gives you a random number from 1 to 6.')
-  async def dice(self, interaction: discord.Interaction):
-    number = ['1', '2', '3', '4', '5', '6']
-    await interaction.response.send_message('🎲 You have got ' + random.choice(number))
 
 
   @app_commands.command(name = 'avatar', description = 'Shows avatar of an user.')
@@ -165,11 +158,25 @@ class Misc(commands.Cog):
       miscEmbed.add_field(name = 'ping', value = '```Usage: /ping```', inline = False)
       miscEmbed.add_field(name = 'stats', value = '```Usage: /stats```', inline = False)
       miscEmbed.add_field(name = 'avatar', value = '```Usage: /avatar [MEMBER](Optional)```', inline = False)
-      miscEmbed.add_field(name = 'dice', value = '```Usage: /dice```', inline = False)
       miscEmbed.add_field(name = 'serverinfo', value = '```Usage: /serverinfo```', inline = False)
       miscEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
       await interaction.response.send_message(embed = miscEmbed)
-
+    
+    elif category == 'games' or category == 'Games':
+      gameEmbed = discord.Embed(
+        title = 'Game Commands',
+        color = discord.Color.gold(),
+        timestamp = datetime.datetime.now()
+      )
+      gameEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
+      gameEmbed.add_field(name = 'dice', value = '```Usage: /dice```', inline = False)
+      gameEmbed.add_field(name = 'hotpotato start', value = '```Usage: /hotpotato start [TIME](Optional)```', inline = False)
+      gameEmbed.add_field(name = 'hotpotato pass', value = '```Usage: /hotpotato pass [USER]```', inline = False)
+      gameEmbed.add_field(name = 'hotpotato help', value = '```Usage: /hotpotato help```', inline = False)
+      gameEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
+      await interaction.response.send_message(embed = gameEmbed)
+    
+    
     else:
       helpEmbed = discord.Embed(
         description = '[Invite](https://dsc.gg/inevitablebot) • [Vote](https://top.gg/bot/920757063599132683/vote) • [Support Server](https://discord.gg/F9N8DmsJyz)\nType `/help <category>` for more information regarding a specific category.',

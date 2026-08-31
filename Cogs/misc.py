@@ -7,11 +7,42 @@ import time
 import psutil
 import platform
 from main import VERSION
-
+import random
 
 class Misc(commands.Cog):
   def __init__(self, client):
     self.client = client
+
+  @commands.Cog.listener()
+  async def on_message(self, message):
+    # Ignore messages from bots so it doesn't loop
+    if message.author.bot:
+        return
+        
+    if "inevitable" in message.content.lower():
+        greetings = [
+            "Summoning me? ✨\n",
+            "You called? 👀\n",
+            "Someone said my name!\n",
+            "Did I hear 'inevitable'? 😉\n",
+            "",
+            ""
+        ]
+        tips = [
+            "Tip: You can use `/help` to see all my commands! 📚",
+            "Did you know? You can play hot potato using `/hotpotato start` 🥔💥",
+            "Tip: Try `/ping` to see how fast I'm running today! 🏓",
+            "Fun fact: I am... inevitable. 😈",
+            "Tip: Use `/stats` to see my current uptime and server count! 📈",
+            "Bored? Roll a dice with `/dice`! 🎲",
+            "Need to clean up chat? Server admins can use `/purge` to sweep things away! 🧹"
+        ]
+        
+        greeting = random.choice(greetings)
+        tip = random.choice(tips)
+        
+        reply = f"{greeting}**{tip}**"
+        await message.channel.send(reply)
 
 
   @app_commands.command(name = 'ping', description = 'Shows the bot\'s latency.')
@@ -113,21 +144,24 @@ class Misc(commands.Cog):
     modEmbed.add_field(name = 'unban', value = '```Permission: Ban Members\nUsage: /unban [MEMBER] {reason}```', inline = False)
     modEmbed.add_field(name = 'notice', value = '```Permission: Administrator\nUsage: /notice #channel {message}```', inline = False)
     modEmbed.add_field(name = 'announce', value = '```Permission: Administrator\nUsage: /announce #channel {message}```', inline = False)
+    modEmbed.add_field(name = 'timeout', value = '```Permission: Moderate Members\nUsage: /timeout [MEMBER] [MINUTES] {reason}```', inline = False)
     modEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
     await interaction.response.send_message(embed = modEmbed)
 
-    # elif category == 'settings' or category == 'Settings':
-    #   setEmbed = discord.Embed(
-    #     title = 'Setting Commands',
-    #     color = discord.Color.gold(),
-    #     timestamp = datetime.datetime.now()
-    #   )
-    #   setEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
-    #   setEmbed.add_field(name = 'serverinfo', value = '```Usage: /serverinfo```', inline = False)
-    #   setEmbed.add_field(name = 'log', value = '```Permission: Administrator\nUsage: /log #channel```', inline = False)
-    #   setEmbed.add_field(name = 'config', value = '```Usage: /config```', inline = False)
-    #   setEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
-    #   await interaction.response.send_message(embed = setEmbed)
+  @help_group.command(name='settings', description='Shows settings commands.')
+  async def help_settings(self, interaction: discord.Interaction):
+    setEmbed = discord.Embed(
+      title = 'Settings Commands',
+      color = discord.Color.gold(),
+      timestamp = datetime.datetime.now()
+    )
+    setEmbed.set_author(name = 'Inevitable', icon_url = self.client.user.display_avatar.url)
+    setEmbed.add_field(name = 'log', value = '```Permission: Administrator\nUsage: /log #channel\nSets the moderation log channel.```', inline = False)
+    setEmbed.add_field(name = 'removelog', value = '```Permission: Administrator\nUsage: /removelog\nRemoves the moderation log channel.```', inline = False)
+    setEmbed.add_field(name = 'config', value = '```Usage: /config\nShows the current server configuration.```', inline = False)
+    setEmbed.add_field(name = 'serverinfo', value = '```Usage: /serverinfo\nShows detailed information about the server.```', inline = False)
+    setEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
+    await interaction.response.send_message(embed = setEmbed)
 
   @help_group.command(name='music', description='Shows music commands.')
   async def help_music(self, interaction: discord.Interaction):
@@ -188,11 +222,11 @@ class Misc(commands.Cog):
     )
 
     helpEmbed.set_author(name = 'Commands', icon_url = self.client.user.display_avatar.url)
-    helpEmbed.add_field(name = 'Moderation', value = '`/lang`, `/topic`, `/purge`, `/kick`, `/ban`, `/unban`, `notice`, `announce`', inline = False)
-    # helpEmbed.add_field(name = 'Settings', value = '`/serverinfo`', inline = False) # removed /config and /log
+    helpEmbed.add_field(name = 'Moderation', value = '`/lang`, `/topic`, `/purge`, `/kick`, `/ban`, `/unban`, `/timeout`, `/notice`, `/announce`', inline = False)
+    helpEmbed.add_field(name = 'Settings', value = '`/log`, `/removelog`, `/config`, `/serverinfo`', inline = False)
     helpEmbed.add_field(name = 'Music', value = '`/join`, `/leave`, `/play`, `/queue`, `/pause`, `/resume`, `/skip`, `/stop`', inline = False)
-    helpEmbed.add_field(name = 'Misc', value = '`/help all`, `/help misc`, `/help moderation`, `/help music`, `/help games`, `/ping`, `/stats`, `/avatar`, `/dice`, `/serverinfo`', inline = False)
-    helpEmbed.add_field(name = 'Games', value = '`dice`, `/hotpotato start`, `/hotpotato pass`, `/hotpotato help`', inline = False)
+    helpEmbed.add_field(name = 'Misc', value = '`/ping`, `/stats`, `/avatar`', inline = False)
+    helpEmbed.add_field(name = 'Games', value = '`/dice`, `/hotpotato start`, `/hotpotato pass`, `/hotpotato help`', inline = False)
     helpEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
 
     await interaction.response.send_message(embed = helpEmbed)

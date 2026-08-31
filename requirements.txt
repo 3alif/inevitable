@@ -5,3 +5,4 @@ python-dotenv==1.2.1
 waitress==3.0.2
 yt-dlp[default]
 PyNaCl
+motor

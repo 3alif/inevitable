@@ -1,8 +1,8 @@
 import discord
-import json
 from discord.ext import commands
 from discord import app_commands
 import datetime
+from db import get_log_channel
 
 
 class Moderation(commands.Cog):
@@ -35,17 +35,17 @@ class Moderation(commands.Cog):
     await interaction.response.send_message(f'Purging {amount} messages...', ephemeral=True)
     await interaction.channel.purge(limit = amount)
 
-    with open("log_channels.json", "r") as f:
-        logger = json.load(f)
-    if str(interaction.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
-        log = discord.Embed(
-          description = f'Used `purge` in {interaction.channel.mention}\n{interaction.message.content}',
-          color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.now()
-        )
-        log.set_author(name = f'{interaction.user}', icon_url = interaction.user.display_avatar.url)
-        await logcnl.send(embed = log)
+    channel_id = await get_log_channel(interaction.guild.id)
+    if channel_id:
+        logcnl = self.client.get_channel(channel_id)
+        if logcnl:
+            log = discord.Embed(
+              description = f'🧹 {interaction.user.mention} purged **{amount}** messages in {interaction.channel.mention}',
+              color = discord.Color.dark_grey(),
+              timestamp = datetime.datetime.now()
+            )
+            log.set_author(name = f'{interaction.user}', icon_url = interaction.user.display_avatar.url)
+            await logcnl.send(embed = log)
 
 
   @app_commands.command(name = 'notice', description = 'Publish a notice in a specific channel.')
@@ -55,17 +55,17 @@ class Moderation(commands.Cog):
     await channel.send(message)
     await interaction.response.send_message(f'Notice sent in {channel.mention}', ephemeral=True)
 
-    with open("log_channels.json", "r") as f:
-        logger = json.load(f)
-    if str(interaction.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
-        log = discord.Embed(
-          description = f'Used `notice` in {interaction.channel.mention}\n{interaction.message.content}',
-          color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.now()
-        )
-        log.set_author(name = f'{interaction.user}', icon_url = interaction.user.display_avatar.url)
-        await logcnl.send(embed = log)
+    channel_id = await get_log_channel(interaction.guild.id)
+    if channel_id:
+        logcnl = self.client.get_channel(channel_id)
+        if logcnl:
+            log = discord.Embed(
+              description = f'📢 {interaction.user.mention} sent a **notice** in {channel.mention}\n\n{message}',
+              color = discord.Color.dark_grey(),
+              timestamp = datetime.datetime.now()
+            )
+            log.set_author(name = f'{interaction.user}', icon_url = interaction.user.display_avatar.url)
+            await logcnl.send(embed = log)
 
 
   @app_commands.command(name = 'announce', description = 'Announce an embed message in a specific channel.')
@@ -80,17 +80,17 @@ class Moderation(commands.Cog):
     await channel.send(embed=embed)
     await interaction.response.send_message(f'Announcement sent in {channel.mention}', ephemeral=True)
 
-    with open("log_channels.json", "r") as f:
-        logger = json.load(f)
-    if str(interaction.guild.id) in logger:
-        logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
-        log = discord.Embed(
-          description = f'Used `announce` in {interaction.channel.mention}\n{interaction.message.content}',
-          color = discord.Color.dark_grey(),
-          timestamp = datetime.datetime.now()
-        )
-        log.set_author(name = f'{interaction.user}', icon_url = interaction.user.display_avatar.url)
-        await logcnl.send(embed = log)
+    channel_id = await get_log_channel(interaction.guild.id)
+    if channel_id:
+        logcnl = self.client.get_channel(channel_id)
+        if logcnl:
+            log = discord.Embed(
+              description = f'📣 {interaction.user.mention} sent an **announcement** in {channel.mention}\n\n{message}',
+              color = discord.Color.dark_grey(),
+              timestamp = datetime.datetime.now()
+            )
+            log.set_author(name = f'{interaction.user}', icon_url = interaction.user.display_avatar.url)
+            await logcnl.send(embed = log)
 
 
 
@@ -108,22 +108,25 @@ class Moderation(commands.Cog):
       description= f'***:white_check_mark: {member} has been kicked*** | {reason}',
       colour=discord.Colour.gold())
     await interaction.response.send_message(embed=embed)
-    await member.send(embed = dm)
+    try:
+        await member.send(embed=dm)
+    except discord.Forbidden:
+        pass
     await member.kick(reason=reason)
 
-    # with open("log_channels.json", "r") as f:
-    #     logger = json.load(f)
-    # if str(interaction.guild.id) in logger:
-    #     logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
-    #     log = discord.Embed(
-    #       color = discord.Color.dark_grey(),
-    #       timestamp = datetime.datetime.now()
-    #     )
-    #     log.set_author(name = f'Kicked | {member}', icon_url = member.display_avatar.url)
-    #     log.add_field(name = 'User:', Value = f'{member}', inline = True)
-    #     log.add_field(name = 'Moderator:', value = interaction.user, inline = True)
-    #     log.add_field(name = 'Reason:', value = reason, inline = True)
-    #     await logcnl.send(embed = log)
+    channel_id = await get_log_channel(interaction.guild.id)
+    if channel_id:
+        logcnl = self.client.get_channel(channel_id)
+        if logcnl:
+            log = discord.Embed(
+              color = discord.Color.dark_orange(),
+              timestamp = datetime.datetime.now()
+            )
+            log.set_author(name = f'👢 Kicked | {member}', icon_url = member.display_avatar.url)
+            log.add_field(name = 'User', value = f'{member.mention} ({member.id})', inline = True)
+            log.add_field(name = 'Moderator', value = interaction.user.mention, inline = True)
+            log.add_field(name = 'Reason', value = reason or 'No reason provided', inline = False)
+            await logcnl.send(embed = log)
 
 
   @kick.error
@@ -151,22 +154,25 @@ class Moderation(commands.Cog):
       description= f'***:white_check_mark: {member} has been banned.*** | {reason}',
       colour=discord.Colour.red())
     await interaction.response.send_message(embed=embed)
-    await member.send(embed = dm)
+    try:
+        await member.send(embed=dm)
+    except discord.Forbidden:
+        pass
     await member.ban(reason=reason)
 
-    # with open("log_channels.json", "r") as f:
-    #     logger = json.load(f)
-    # if str(interaction.guild.id) in logger:
-    #     logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
-    #     log = discord.Embed(
-    #       color = discord.Color.dark_grey(),
-    #       timestamp = datetime.datetime.now()
-    #     )
-    #     log.set_author(name = f'Banned | {member}', icon_url = member.display_avatar.url)
-    #     log.add_field(name = 'User:', value = f'{member}', inline = True)
-    #     log.add_field(name = 'Moderator:', value = interaction.user, inline = True)
-    #     log.add_field(name = 'Reason:', value = reason, inline = True)
-    #     await logcnl.send(embed = log)
+    channel_id = await get_log_channel(interaction.guild.id)
+    if channel_id:
+        logcnl = self.client.get_channel(channel_id)
+        if logcnl:
+            log = discord.Embed(
+              color = discord.Color.red(),
+              timestamp = datetime.datetime.now()
+            )
+            log.set_author(name = f'🔨 Banned | {member}', icon_url = member.display_avatar.url)
+            log.add_field(name = 'User', value = f'{member.mention} ({member.id})', inline = True)
+            log.add_field(name = 'Moderator', value = interaction.user.mention, inline = True)
+            log.add_field(name = 'Reason', value = reason or 'No reason provided', inline = False)
+            await logcnl.send(embed = log)
 
 
   @ban.error
@@ -209,20 +215,20 @@ class Moderation(commands.Cog):
           description= f'***:white_check_mark: {user} has been unbanned.***',
           colour=discord.Colour.green())
         await interaction.followup.send(embed=embed)
-        return
 
-    # with open("log_channels.json", "r") as f:
-    #     logger = json.load(f)
-    # if str(interaction.guild.id) in logger:
-    #     logcnl = self.client.get_channel(logger[str(interaction.guild.id)])
-    #     log = discord.Embed(
-    #       color = discord.Color.dark_grey(),
-    #       timestamp = datetime.datetime.now()
-    #     )
-    #     log.set_author(name = f'Unbanned | {member}', icon_url = member.display_avatar.url)
-    #     log.add_field(name = 'User:', value = f'{member}', inline = True)
-    #     log.add_field(name = 'Moderator:', value = interaction.user.mention, inline = True)
-    #     await logcnl.send(embed = log)
+        channel_id = await get_log_channel(interaction.guild.id)
+        if channel_id:
+            logcnl = self.client.get_channel(channel_id)
+            if logcnl:
+                log = discord.Embed(
+                  color = discord.Color.green(),
+                  timestamp = datetime.datetime.now()
+                )
+                log.set_author(name = f'✅ Unbanned | {user}', icon_url = user.display_avatar.url)
+                log.add_field(name = 'User', value = f'{user.mention} ({user.id})', inline = True)
+                log.add_field(name = 'Moderator', value = interaction.user.mention, inline = True)
+                await logcnl.send(embed = log)
+        return
 
 
   @unban.error
@@ -236,6 +242,61 @@ class Moderation(commands.Cog):
               'Unbans a banned user\n\n**Cooldown:** *3 seconds*\n**Usage:** */unban [MEMBER]*\n**Example:** */unban @User*',
               colour=discord.Colour.blue())
           await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+  @app_commands.command(name='timeout', description='Times out a member for a specified duration.')
+  @app_commands.describe(member='The member to timeout.', minutes='Duration in minutes.', reason='Reason for the timeout.')
+  @app_commands.checks.cooldown(1, 3.0)
+  @app_commands.checks.has_permissions(moderate_members=True)
+  async def timeout(self, interaction: discord.Interaction, member: discord.Member, minutes: int, *, reason: str = None):
+    duration = datetime.timedelta(minutes=minutes)
+    try:
+        await member.timeout(duration, reason=reason)
+        dm = discord.Embed(
+          description= f'***You are timed out from {interaction.guild} for {minutes} minutes*** | {reason}',
+          colour=discord.Colour.orange())
+        embed = discord.Embed(
+            description=f'***:white_check_mark: {member} has been timed out for {minutes} minutes.*** | {reason}',
+            colour=discord.Colour.orange()
+        )
+        await interaction.response.send_message(embed=embed)
+        
+        try:
+            await member.send(embed=dm)
+        except discord.Forbidden:
+            pass
+
+        channel_id = await get_log_channel(interaction.guild.id)
+        if channel_id:
+            logcnl = self.client.get_channel(channel_id)
+            if logcnl:
+                log = discord.Embed(
+                  color = discord.Color.orange(),
+                  timestamp = datetime.datetime.now()
+                )
+                log.set_author(name = f'⏱️ Timed Out | {member}', icon_url = member.display_avatar.url)
+                log.add_field(name = 'User', value = f'{member.mention} ({member.id})', inline = True)
+                log.add_field(name = 'Moderator', value = interaction.user.mention, inline = True)
+                log.add_field(name = 'Duration', value = f'{minutes} minutes', inline = True)
+                log.add_field(name = 'Reason', value = reason or 'No reason provided', inline = False)
+                await logcnl.send(embed = log)
+            
+    except discord.Forbidden:
+        await interaction.response.send_message(f'I lack permissions to time out {member.mention}. Are they higher in the role hierarchy?', ephemeral=True)
+
+
+  @timeout.error
+  async def timeout_error(self, interaction: discord.Interaction, error):
+      if isinstance(error, app_commands.MissingPermissions):
+          print('Someone tried to timeout without permissions.')
+      else:
+          embed = discord.Embed(
+              title='Command: /timeout',
+              description='Times out a member\n\n**Cooldown:** *3 seconds*\n**Usage:** */timeout [MEMBER] [MINUTES] {reason}*\n**Example:** */timeout @User 10 for spamming.*',
+              colour=discord.Colour.blue()
+          )
+          if not interaction.response.is_done():
+              await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(client):

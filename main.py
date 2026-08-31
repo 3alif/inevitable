@@ -2,16 +2,15 @@ import asyncio
 import discord
 import os
 from dotenv import load_dotenv
-import json
 from discord.ext import commands
-from discord.ext.commands import CommandNotFound
 import datetime
 from server import online
+from db import get_log_channel
 
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
-VERSION = '0.7'
+VERSION = '0.8'
 
 
 class MyBot(commands.Bot):
@@ -22,7 +21,7 @@ class MyBot(commands.Bot):
         intents.message_content = True
         intents.presences = False
         super().__init__(
-          command_prefix = 'i.',
+          command_prefix = commands.when_mentioned,  # No prefix; only respond when @mentioned
           help_command = None,
           intents = intents,
           application_id = 920757063599132683
@@ -39,146 +38,131 @@ class MyBot(commands.Bot):
         print(f"imma ready in {len(self.guilds)} servers")
 
 
-    async def on_command_error(self, ctx, error):
-        if isinstance(error, CommandNotFound):
-            print(error)
-        raise error
+    async def _get_log_channel(self, guild_id: int):
+        """Helper to fetch the log channel object for a guild."""
+        channel_id = await get_log_channel(guild_id)
+        if channel_id:
+            return self.get_channel(channel_id)
+        return None
 
 
-    # async def on_member_join(self, member):
-    #     with open('log_channels.json', 'r') as f:
-    #         logger = json.load(f)
-    #     if str(member.guild.id) in logger:
-    #         logcnl = self.get_channel(logger[str(member.guild.id)])
-    #         if logcnl and hasattr(logcnl, 'send'):
-    #             log = discord.Embed(
-    #                 title = 'Member Joined',
-    #                 description = f'{member} | {member.mention}',
-    #                 color = discord.Color.dark_grey(),
-    #                 timestamp = datetime.datetime.now()
-    #             )
-    #             log.set_author(name = f'{member.guild}', icon_url = member.guild.icon_url)
-    #             log.set_thumbnail(url = member.avatar_url)
-    #             log.add_field(name = 'Account Age', value = (datetime.datetime.now() - member.created_at), inline=False)
-    #             log.set_footer(text = f'ID: {member.id}')
-    #             await logcnl.send(embed = log)
+    async def on_member_join(self, member):
+        logcnl = await self._get_log_channel(member.guild.id)
+        if logcnl:
+            log = discord.Embed(
+                title = 'Member Joined',
+                description = f'{member} | {member.mention}',
+                color = discord.Color.green(),
+                timestamp = datetime.datetime.now()
+            )
+            log.set_author(name=str(member.guild), icon_url=member.guild.icon.url if member.guild.icon else None)
+            log.set_thumbnail(url=member.display_avatar.url)
+            account_age = datetime.datetime.now(datetime.timezone.utc) - member.created_at
+            log.add_field(name='Account Age', value=str(account_age).split('.')[0], inline=False)
+            log.set_footer(text=f'ID: {member.id}')
+            await logcnl.send(embed=log)
 
 
-    # async def on_member_remove(self, member):
-    #     with open('log_channels.json', 'r') as f:
-    #         logger = json.load(f)
-    #     if str(member.guild.id) in logger:
-    #         logcnl = self.get_channel(logger[str(member.guild.id)])
-    #         if logcnl and hasattr(logcnl, 'send'):
-    #             log = discord.Embed(
-    #                 title = 'Member Left',
-    #                 description = f'{member} | {member.mention}',
-    #                 color = discord.Color.dark_grey(),
-    #                 timestamp = datetime.datetime.now()
-    #             )
-    #             log.set_author(name = f'{member.guild}', icon_url = member.guild.icon_url)
-    #             log.set_footer(text = f'ID: {member.id}')
-    #             await logcnl.send(embed = log)
+    async def on_member_remove(self, member):
+        logcnl = await self._get_log_channel(member.guild.id)
+        if logcnl:
+            log = discord.Embed(
+                title = 'Member Left',
+                description = f'{member} | {member.mention}',
+                color = discord.Color.red(),
+                timestamp = datetime.datetime.now()
+            )
+            log.set_author(name=str(member.guild), icon_url=member.guild.icon.url if member.guild.icon else None)
+            log.set_footer(text=f'ID: {member.id}')
+            await logcnl.send(embed=log)
 
 
-    # async def on_member_update(self, before, after):
-    #     with open('log_channels.json', 'r') as f:
-    #         logger = json.load(f)
-    #     if str(before.guild.id) in logger:
-    #         logcnl = self.get_channel(logger[str(before.guild.id)])
-    #         if logcnl and hasattr(logcnl, 'send') and not before.display_name == after.display_name:
-    #             log = discord.Embed(
-    #                 description = f'**{before.mention} nickname changed**',
-    #                 color = discord.Color.dark_grey(),
-    #                 timestamp = datetime.datetime.now()
-    #             )
-    #             log.set_author(name = after, icon_url=after.avatar_url)
-    #             log.add_field(name = 'Before', value = before.display_name, inline = False)
-    #             log.add_field(name = 'After', value=after.display_name, inline = False)
-    #             log.set_footer(text = f'ID: {after.id}')
-    #             await logcnl.send(embed = log)
+    async def on_member_update(self, before, after):
+        if before.display_name == after.display_name:
+            return
+        logcnl = await self._get_log_channel(before.guild.id)
+        if logcnl:
+            log = discord.Embed(
+                description = f'**{before.mention} nickname changed**',
+                color = discord.Color.dark_grey(),
+                timestamp = datetime.datetime.now()
+            )
+            log.set_author(name=str(after), icon_url=after.display_avatar.url)
+            log.add_field(name='Before', value=before.display_name, inline=False)
+            log.add_field(name='After', value=after.display_name, inline=False)
+            log.set_footer(text=f'ID: {after.id}')
+            await logcnl.send(embed=log)
 
 
-    # async def on_message_delete(self, message):
-    #     with open("log_channels.json", "r") as f:
-    #         logger = json.load(f)
-    #     if message.author.bot:
-    #         return
-    #     if len(message.content) > 1000:
-    #         edit = message.content[:1000] + '...'
-    #     else:
-    #         edit = message.content
-    #     if str(message.guild.id) in logger:
-    #         logcnl = self.get_channel(logger[str(message.guild.id)])
-    #         if logcnl and hasattr(logcnl, 'send'):
-    #             log = discord.Embed(
-    #                 description = f'**Message sent by {message.author.mention} deleted in {message.channel.mention}**\n{edit}',
-    #                 color = discord.Color.dark_grey(),
-    #                 timestamp = datetime.datetime.now()
-    #             )
-    #             log.set_author(name = f'{message.author}', icon_url = message.author.avatar_url)
-    #             log.set_footer(text = f'User ID: {message.author.id} | Message ID: {message.id}')
-    #             await logcnl.send(embed = log)  # type: ignore
+    async def on_message_delete(self, message):
+        if message.author.bot or not message.guild:
+            return
+        logcnl = await self._get_log_channel(message.guild.id)
+        if logcnl:
+            content = message.content if message.content else '*[No text content]*'
+            if len(content) > 1000:
+                content = content[:1000] + '...'
+            log = discord.Embed(
+                description = f'**Message by {message.author.mention} deleted in {message.channel.mention}**\n{content}',
+                color = discord.Color.dark_grey(),
+                timestamp = datetime.datetime.now()
+            )
+            log.set_author(name=str(message.author), icon_url=message.author.display_avatar.url)
+            log.set_footer(text=f'User ID: {message.author.id} | Message ID: {message.id}')
+            await logcnl.send(embed=log)
 
 
-    # async def on_message_edit(self, before, after):
-    #     with open("log_channels.json", "r") as f:
-    #         logger = json.load(f)
-    #     if before.author.bot:
-    #         return
-    #     if not before.embeds and after.embeds:
-    #         return
-    #     if len(before.content) < 500:
-    #         bedit = before.content
-    #     else:
-    #         bedit = before.content[:500] + '...'
-    #     if len(after.content) < 500:
-    #         aedit = after.content
-    #     else:
-    #         aedit = after.content[:500] + '...'
-    #     if str(before.guild.id) in logger:
-    #         logcnl = self.get_channel(logger[str(before.guild.id)])
-    #         if logcnl and hasattr(logcnl, 'send'):
-    #             log = discord.Embed(
-    #                 description = f'**Message sent by {before.author.mention} edited in {before.channel.mention}**',
-    #                 color = discord.Color.dark_grey(),
-    #                 timestamp = after.created_at
-    #             )
-    #             log.set_author(name = f'{before.author}', icon_url=before.author.avatar_url)
-    #             log.set_footer(text = f'User ID: {before.author.id} | Message ID: {after.id}')
-    #             log.add_field(name = 'Before', value = bedit, inline = False)
-    #             log.add_field(name = 'After', value = aedit, inline = False)
-    #             await logcnl.send(embed = log)
+    async def on_message_edit(self, before, after):
+        if before.author.bot or not before.guild:
+            return
+        # Ignore embed-only updates (e.g. link previews loading in)
+        if not before.embeds and after.embeds:
+            return
+        if before.content == after.content:
+            return
+        logcnl = await self._get_log_channel(before.guild.id)
+        if logcnl:
+            bedit = before.content[:500] + '...' if len(before.content) > 500 else before.content
+            aedit = after.content[:500] + '...' if len(after.content) > 500 else after.content
+            log = discord.Embed(
+                description = f'**Message by {before.author.mention} edited in {before.channel.mention}** [[Jump]({after.jump_url})]',
+                color = discord.Color.dark_grey(),
+                timestamp = after.edited_at or datetime.datetime.now()
+            )
+            log.set_author(name=str(before.author), icon_url=before.author.display_avatar.url)
+            log.set_footer(text=f'User ID: {before.author.id} | Message ID: {after.id}')
+            log.add_field(name='Before', value=bedit or '*[empty]*', inline=False)
+            log.add_field(name='After', value=aedit or '*[empty]*', inline=False)
+            await logcnl.send(embed=log)
 
 
-    # async def on_voice_state_update(self, member, before, after):
-    #     with open("log_channels.json", "r") as f:
-    #         logger = json.load(f)
+    async def on_voice_state_update(self, member, before, after):
+        if not (before.channel or after.channel):
+            return
+        guild_id = (before.channel or after.channel).guild.id
+        logcnl = await self._get_log_channel(guild_id)
+        if not logcnl:
+            return
 
-    #     channel = before.channel or after.channel
+        des = ''
+        if before.channel is not None:
+            if after.channel is not None and before.channel != after.channel:
+                des = f'{member.mention} switched from {before.channel.mention} to {after.channel.mention}'
+            elif after.channel is None:
+                des = f'{member.mention} left voice channel {before.channel.mention}'
+        else:
+            if after.channel is not None:
+                des = f'{member.mention} joined voice channel {after.channel.mention}'
 
-    #     if str(channel.guild.id) in logger:
-    #         logcnl = self.get_channel(logger[str(channel.guild.id)])
-    #         if logcnl and hasattr(logcnl, 'send'):
-    #             des = ''
-    #             if before.channel is not None:
-    #                 if after.channel is not None and not before.channel == after.channel:
-    #                     des = f'{member.mention} switched to {after.channel.mention} from {before.channel.mention}'
-    #                 elif after.channel is None:
-    #                     des = f'{member.mention} left voice channel {before.channel.mention}'
-    #             else:
-    #                 if after.channel is not None:
-    #                     des = f'{member.mention} joined voice channel {after.channel.mention}'
-
-    #             if des:
-    #                 log = discord.Embed(
-    #                     description=des,
-    #                     color=discord.Color.dark_grey(),
-    #                 timestamp=datetime.datetime.now()
-    #                 )
-    #                 log.set_author(name = member, icon_url = member.avatar_url)
-    #                 log.set_footer(text = f'ID: {member.id}')
-    #                 await logcnl.send(embed = log)
+        if des:
+            log = discord.Embed(
+                description=des,
+                color=discord.Color.dark_grey(),
+                timestamp=datetime.datetime.now()
+            )
+            log.set_author(name=str(member), icon_url=member.display_avatar.url)
+            log.set_footer(text=f'ID: {member.id}')
+            await logcnl.send(embed=log)
 
 
 

@@ -6,6 +6,8 @@ from discord.ext import commands
 import datetime
 from server import online
 from db import get_log_channel
+import traceback
+from discord import app_commands
 
 
 load_dotenv()
@@ -31,6 +33,28 @@ class MyBot(commands.Bot):
         for filename in os.listdir('./Cogs'):
             if filename.endswith('.py'):
                 await self.load_extension(f'Cogs.{filename[:-3]}')
+        self.tree.on_error = self.on_app_command_error
+    
+    async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        """Ensures every slash command failure still gets a response instead of hanging silently."""
+        if isinstance(error, app_commands.MissingPermissions):
+            msg = "❌ You don't have permission to use this command."
+        elif isinstance(error, app_commands.NoPrivateMessage):
+            msg = "❌ This command can only be used in a server."
+        elif isinstance(error, app_commands.CommandOnCooldown):
+            msg = f"⏳ This command is on cooldown. Try again in {error.retry_after:.1f}s."
+        else:
+            msg = "⚠️ Something went wrong running that command. It's been logged."
+            print(f"[APP COMMAND ERROR] {interaction.command.name if interaction.command else 'unknown'}: {error}", flush=True)
+            traceback.print_exception(type(error), error, error.__traceback__)
+
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(msg, ephemeral=True)
+            else:
+                await interaction.response.send_message(msg, ephemeral=True)
+        except discord.HTTPException:
+            pass
 
     async def on_ready(self):
         await self.change_presence(activity=discord.Game(name='/help'))

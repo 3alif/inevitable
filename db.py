@@ -4,7 +4,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv('MONGO_URI'))
+MONGO_URI = os.getenv('MONGO_URI')
+if not MONGO_URI:
+    raise RuntimeError('MONGO_URI is not set. Add it to your .env / Render environment variables.')
+
+
+_client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI, serverSelectionTimeoutMS=5000)
 _db = _client['inevitable']
 _log_channels = _db['log_channels']
 

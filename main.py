@@ -12,7 +12,7 @@ from discord import app_commands
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
-VERSION = '0.8'
+VERSION = '0.9'
 
 
 class MyBot(commands.Bot):
@@ -23,7 +23,7 @@ class MyBot(commands.Bot):
         intents.message_content = True
         intents.presences = False
         super().__init__(
-          command_prefix = commands.when_mentioned,  # No prefix; only respond when @mentioned
+          command_prefix = commands.when_mentioned,
           help_command = None,
           intents = intents,
           application_id = 920757063599132683

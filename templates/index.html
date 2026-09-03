@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Inevitable - Discord Bot{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 2rem 0 4rem 0;">
+    <h1 style="font-size: 4rem; margin-bottom: 1rem;">I am... <span class="gradient-text">Inevitable</span></h1>
+    <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 2.5rem auto;">
+        The ultimate all-in-one Discord bot featuring advanced moderation, robust settings, immersive music, and engaging games for your server.
+    </p>
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="https://dsc.gg/inevitablebot" class="btn btn-primary" target="_blank">Invite to Server</a>
+        <a href="https://discord.gg/F9N8DmsJyz" class="btn" style="background: rgba(255,255,255,0.1); color: white;" target="_blank">Support Server</a>
+    </div>
+</div>
+
+<div class="glass-card content">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; text-align: center;">
+        <div>
+            <h3 class="gradient-text">🛡️ Moderation</h3>
+            <p>Keep your community safe with powerful tools like purge, kick, ban, timeout, and custom logging channels.</p>
+        </div>
+        <div>
+            <h3 class="gradient-text">🎵 Music</h3>
+            <p>High-quality music playback directly in your voice channels. Queue, skip, pause, and play your favorite tracks.</p>
+        </div>
+        <div>
+            <h3 class="gradient-text">🎲 Games & Fun</h3>
+            <p>Keep your members engaged with interactive games like Hot Potato, dice rolling, and fun social commands.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

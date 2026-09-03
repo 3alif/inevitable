@@ -39,34 +39,17 @@ class Settings(commands.Cog):
     await interaction.response.send_message(embed=embed)
 
 
-  @app_commands.command(name='config', description='Shows the configuration of the server.')
-  async def config(self, interaction: discord.Interaction):
+  @app_commands.command(name='serverinfo', description='Shows information of the server.')
+  async def serverinfo(self, interaction: discord.Interaction):
+    await interaction.response.defer()
+
     channel_id = await get_log_channel(interaction.guild.id)
     if channel_id:
       logcnl = self.client.get_channel(channel_id)
       channel_val = logcnl.mention if logcnl else f'Channel not found (ID: {channel_id})'
     else:
       channel_val = 'Not set. Use `/log #channel` to configure. *(Admin only)*'
-
-    embed = discord.Embed(
-      title=str(interaction.guild),
-      color=discord.Color.purple(),
-      timestamp=datetime.datetime.now()
-    )
-    embed.set_author(name='Configuration', icon_url=self.client.user.display_avatar.url)
-    if interaction.guild.icon:
-      embed.set_thumbnail(url=interaction.guild.icon.url)
-    embed.add_field(name='Prefix', value='`i.` or Slash Commands\nUse ***/help all*** to get started.', inline=False)
-    embed.add_field(name='Log Channel', value=channel_val, inline=False)
-    embed.add_field(name='Useful Links', value='[Invite](https://dsc.gg/inevitablebot) • [Vote](https://top.gg/bot/920757063599132683/vote) • [Support Server](https://discord.gg/F9N8DmsJyz)', inline=False)
-    embed.set_footer(text=f'Requested by {interaction.user}', icon_url=interaction.user.display_avatar.url)
-    await interaction.response.send_message(embed=embed)
-
-
-  @app_commands.command(name='serverinfo', description='Shows information of the server.')
-  async def serverinfo(self, interaction: discord.Interaction):
-    await interaction.response.defer()
-
+    
     guild = interaction.guild
     datecreated = guild.created_at.strftime("%d-%m-%Y")
 
@@ -97,6 +80,8 @@ class Settings(commands.Cog):
     embed.add_field(name='Voice Channels', value=len(interaction.guild.voice_channels), inline=True)
     if interaction.user.guild_permissions.administrator and role_list:
       embed.add_field(name='Role List', value=roles, inline=False)
+      embed.add_field(name='Log Channel', value=channel_val, inline=False)
+    embed.add_field(name='Useful Links', value='[Invite](https://dsc.gg/inevitablebot) • [Vote](https://top.gg/bot/920757063599132683/vote) • [Support Server](https://discord.gg/F9N8DmsJyz)', inline=False)
 
     await interaction.followup.send(embed=embed)
 

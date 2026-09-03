@@ -1,13 +1,21 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 from threading import Thread
 from waitress import serve
 
-app = Flask('')
+app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Imma Alive"
+    return render_template('index.html')
+
+@app.route('/tos')
+def tos():
+    return render_template('tos.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
 
 def run():
   port = int(os.environ.get('PORT', 8080))

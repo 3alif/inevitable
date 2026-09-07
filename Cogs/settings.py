@@ -81,7 +81,6 @@ class Settings(commands.Cog):
     if interaction.user.guild_permissions.administrator and role_list:
       embed.add_field(name='Role List', value=roles, inline=False)
       embed.add_field(name='Log Channel', value=channel_val, inline=False)
-    embed.add_field(name='Useful Links', value='[Invite](https://dsc.gg/inevitablebot) • [Vote](https://top.gg/bot/920757063599132683/vote) • [Support Server](https://discord.gg/F9N8DmsJyz)', inline=False)
 
     await interaction.followup.send(embed=embed)
 

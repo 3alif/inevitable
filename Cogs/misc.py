@@ -120,6 +120,7 @@ class Misc(commands.Cog):
     embed.add_field(name = 'RAM Usage', value = f'`{mem_usage} MB`', inline = True)
     embed.add_field(name = 'Library Versions', value = f'`Python: v{pyver}\nDiscord.py: v{dpyver}`', inline = False)
     embed.add_field(name = 'Inevitable', value = f'`v{VERSION}`', inline = True)
+    embed.add_field(name='Useful Links', value='[Terms of Service](https://inevitable-r80k.onrender.com/tos) • [Privacy Policy](https://inevitable-r80k.onrender.com/privacy)', inline=False)
 
     await interaction.followup.send(embed = embed)
 
@@ -147,7 +148,7 @@ class Misc(commands.Cog):
       helpEmbed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.display_avatar.url)
 
       await interaction.response.send_message(embed = helpEmbed)
-      await interaction.channel.send('Need more help? Join the official support server, if you can\'t understand something: https://discord.gg/F9N8DmsJyz')
+      await interaction.channel.send('Need more help? Join the official support server: https://discord.gg/F9N8DmsJyz\nTerms of Service: https://inevitable-r80k.onrender.com/tos\nPrivacy Policy: https://inevitable-r80k.onrender.com/privacy')
 
     elif category == 'moderation':
       if not (interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.moderate_members or interaction.user.guild_permissions.kick_members or interaction.user.guild_permissions.ban_members):

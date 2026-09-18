@@ -44,7 +44,7 @@ class  YTDLSource(discord.PCMVolumeTransformer):
 
   @classmethod
   async def get_info(cls, query, *, loop=None):
-      """Fetch track metadata (title, webpage_url, uploader, thumbnail) without streaming."""
+      """Fetch track metadata and raise if the track is DRM-protected or geo-restricted."""
       loop = loop or asyncio.get_event_loop()
       ydl_opts = {**cls._YDL_OPTS, 'extract_flat': False}
 
@@ -56,6 +56,10 @@ class  YTDLSource(discord.PCMVolumeTransformer):
 
       if 'entries' in data:
           data = data['entries'][0] if isinstance(data['entries'], list) else data['entries']
+
+      # Geo-restricted / premium tracks on SoundCloud are served as 30-second previews
+      if data.get('duration') == 30 and data.get('extractor', '').startswith('soundcloud'):
+          raise Exception('Track is geo-restricted or premium-only (30-second preview).')
 
       return {
           'query': query,
@@ -178,15 +182,19 @@ class SearchResultsView(discord.ui.View):
             print(f'[MUSIC] Search select metadata error: {e}', flush=True)
             track = {**chosen, 'query': chosen['webpage_url']}
 
-        self.music_cog.queue.append(track)
+        self.music_cog._get_queue(interaction.guild.id).append(track)
         track_url = track.get('webpage_url')
         title_display = (
             f'[{track["title"]}]({track_url})' if track_url else f'**{track["title"]}**'
         )
-        self.music_cog.for_queue.append(
+        self.music_cog._get_for_queue(interaction.guild.id).append(
             f'{title_display} | `Requested by: {interaction.user}`'
         )
-        await interaction.followup.send(f'Track added to queue: {title_display}')
+        queue_embed = discord.Embed(
+            description=f'🎵 Track added to queue: {title_display}',
+            color=discord.Color.greyple()
+        )
+        await interaction.followup.send(embed=queue_embed)
 
         self.select.disabled = True
         self.stop()
@@ -273,14 +281,10 @@ class Music(commands.Cog):
             
         await interaction.channel.send(embed=embed)
     except Exception as e:
-        print(f"[MUSIC ERROR] Failed in play_next: {e}", flush=True)
+        error_str = str(e)
+        print(f"[MUSIC ERROR] Failed in play_next: {error_str}", flush=True)
         traceback.print_exc(file=sys.stdout)
         sys.stdout.flush()
-        
-        error_msg = str(e)
-        if len(error_msg) > 500:
-            error_msg = error_msg[:500] + "..."
-        await interaction.channel.send(f"❌ Failed to play `{track.get('title', 'Unknown')}`: {error_msg}")
         await self.play_next(interaction)
 
   @app_commands.command(name = 'join', description = 'Connects to your voice channel.')
@@ -320,18 +324,41 @@ class Music(commands.Cog):
       if not interaction.guild.voice_client:
           channel = interaction.user.voice.channel
           await channel.connect(self_deaf = True)
+
+      track = None
       
       try:
           track = await YTDLSource.get_info(query, loop=self.client.loop)
       except Exception as e:
-          print(f"[MUSIC] Metadata fetch failed, falling back to raw query: {e}", flush=True)
-          track = {'query': query, 'title': query, 'webpage_url': None, 'uploader': None, 'thumbnail': None}
+          print(f'[MUSIC] Direct query failed ({e}), trying top-5 candidates...', flush=True)
+      
+      if track is None:
+          candidates = await YTDLSource.search(query, loop=self.client.loop, limit=5)
+          for candidate in candidates:
+              url = candidate.get('webpage_url')
+              if not url:
+                  continue
+              try:
+                  track = await YTDLSource.get_info(url, loop=self.client.loop)
+                  break
+              except Exception as e:
+                  print(f'[MUSIC] Candidate "{candidate["title"]}" skipped: {e}', flush=True)
+
+      if track is None:
+          return await interaction.followup.send(
+              f'❌ Could not find a playable track for **{query}**. '
+              'The track may be geo-restricted or DRM-protected on SoundCloud.'
+          )
 
       self._get_queue(interaction.guild.id).append(track)
       track_url = track.get('webpage_url')
       title_display = f'[{track["title"]}]({track_url})' if track_url else f'**{track["title"]}**'
       self._get_for_queue(interaction.guild.id).append(f'{title_display} | `Requested by: {interaction.user}`')
-      await interaction.followup.send(f'Track added to queue: {title_display}')
+      queue_embed = discord.Embed(
+          description=f'🎵 Track added to queue: {title_display}',
+          color=discord.Color.greyple()
+      )
+      await interaction.followup.send(embed=queue_embed)
 
       if not interaction.guild.voice_client.is_playing() and not interaction.guild.voice_client.is_paused():
         asyncio.create_task(self.play_next(interaction))
@@ -347,22 +374,35 @@ class Music(commands.Cog):
       if not interaction.guild.voice_client:
           channel = interaction.user.voice.channel
           await channel.connect(self_deaf=True)
-
-      results = await YTDLSource.search(query, loop=self.client.loop)
-      if not results:
-          return await interaction.followup.send('No results found for that query.')
       
+      candidates = await YTDLSource.search(query, loop=self.client.loop, limit=15)
+      if not candidates:
+          return await interaction.followup.send('No results found for that query.')
+    
+      async def _validate(candidate):
+          url = candidate.get('webpage_url')
+          if not url:
+              return None
+          try:
+              return await YTDLSource.get_info(url, loop=self.client.loop)
+          except Exception:
+              return None
+
+      validated_tasks = await asyncio.gather(*[_validate(c) for c in candidates])
+      results = [t for t in validated_tasks if t is not None][:10]
+
+      if not results:
+          return await interaction.followup.send(
+              '❌ No playable results found. All matched tracks appear to be geo-restricted or DRM-protected.'
+          )
+
       lines = []
       for i, track in enumerate(results, 1):
           title = track['title']
           url   = track.get('webpage_url')
           artist = track.get('uploader') or 'Unknown Artist'
-          dur    = track.get('duration')
-          dur_str = f'`{int(dur) // 60}:{int(dur) % 60:02d}`' if dur else ''
           entry = f'`{i:02}.` [{title}]({url})' if url else f'`{i:02}.` **{title}**'
           entry += f' — {artist}'
-          if dur_str:
-              entry += f' {dur_str}'
           lines.append(entry)
 
       guild_icon = interaction.guild.icon.url if interaction.guild.icon else None

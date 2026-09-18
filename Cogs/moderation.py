@@ -11,7 +11,7 @@ class Moderation(commands.Cog):
 
     
   @app_commands.command(name = 'topic', description = 'Alert a member not to go off-topic in a topic wise channel and mention an off-topic channel.')
-  @app_commands.describe(member = 'The member to alert.', channel = 'The channel to avoid off-topic in.')
+  @app_commands.describe(member = 'The member to alert.', channel = 'The channel to suggest for off-topic.')
   @app_commands.checks.cooldown(1, 3.0)
   @app_commands.checks.has_permissions(manage_messages=True)
   async def topic(self, interaction: discord.Interaction, member: discord.Member, channel: discord.TextChannel):

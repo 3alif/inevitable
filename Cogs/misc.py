@@ -136,7 +136,7 @@ class Misc(commands.Cog):
       )
 
       helpEmbed.set_author(name = 'Commands', icon_url = self.client.user.display_avatar.url)
-      helpEmbed.add_field(name = 'Music', value = '`/join`, `/leave`, `/play`, `/queue`, `/pause`, `/resume`, `/skip`, `/stop`', inline = False)
+      helpEmbed.add_field(name = 'Music', value = '`/join`, `/leave`, `/play`, `/search`, `/queue`, `/pause`, `/resume`, `/skip`, `/stop`', inline = False)
       helpEmbed.add_field(name = 'Games', value = '`/dice`, `/hotpotato start`, `/hotpotato pass`, `/hotpotato help`', inline = False)
       if interaction.user.guild_permissions.manage_messages or interaction.user.guild_permissions.moderate_members or interaction.user.guild_permissions.kick_members or interaction.user.guild_permissions.ban_members:
         helpEmbed.add_field(name = 'Moderation', value = '`/lang`, `/topic`, `/purge`, `/kick`, `/ban`, `/unban`, `/timeout`, `/notice`, `/announce`', inline = False)
@@ -199,6 +199,7 @@ class Misc(commands.Cog):
       musicEmbed.add_field(name = 'join', value = '```Usage: /join```', inline = False)
       musicEmbed.add_field(name = 'leave', value = '```Usage: /leave```', inline = False)
       musicEmbed.add_field(name = 'play', value = '```Usage: /play [song]```', inline = False)
+      musicEmbed.add_field(name = 'search', value = '```Usage: /search [song]```', inline = False)
       musicEmbed.add_field(name = 'queue', value = '```Usage: /queue```', inline = False)
       musicEmbed.add_field(name = 'skip', value = '```Usage: /skip```', inline = False)
       musicEmbed.add_field(name = 'pause', value = '```Usage: /pause```', inline = False)

@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Inevitable Bot{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;700;800&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --bg-color: #0b0c10;
@@ -31,13 +34,16 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 15% 50%, rgba(108, 92, 231, 0.15), transparent 25%),
                 radial-gradient(circle at 85% 30%, rgba(0, 210, 211, 0.15), transparent 25%);
             background-attachment: fixed;
         }
 
-        h1, h2, h3, h4 {
+        h1,
+        h2,
+        h3,
+        h4 {
             font-family: 'Outfit', sans-serif;
             font-weight: 700;
             color: #ffffff;
@@ -200,28 +206,82 @@
 
         /* Animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @media (max-width: 768px) {
-            .nav-links {
-                display: none; /* In a real app, we'd add a hamburger menu */
+            .hamburger {
+                display: flex !important;
             }
+
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: rgba(11, 12, 16, 0.98);
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+                border-bottom: 1px solid var(--surface-border);
+                padding: 1.5rem 5%;
+                gap: 1.5rem;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            }
+
+            .nav-links.active {
+                display: flex;
+                animation: slideDown 0.3s ease forwards;
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
             .glass-card {
                 padding: 2rem;
             }
         }
     </style>
 </head>
+
 <body>
 
     <nav>
         <a href="/" class="logo gradient-text">Inevitable</a>
-        <div class="nav-links">
+        <div class="hamburger" id="hamburger"
+            style="display: none; cursor: pointer; flex-direction: column; gap: 6px; z-index: 101;">
+            <span
+                style="width: 30px; height: 3px; background-color: var(--text-primary); border-radius: 3px; transition: all 0.3s ease;"></span>
+            <span
+                style="width: 30px; height: 3px; background-color: var(--text-primary); border-radius: 3px; transition: all 0.3s ease;"></span>
+            <span
+                style="width: 30px; height: 3px; background-color: var(--text-primary); border-radius: 3px; transition: all 0.3s ease;"></span>
+        </div>
+        <div class="nav-links" id="nav-links">
             <a href="/">Home</a>
             <a href="/tos">Terms of Service</a>
             <a href="/privacy">Privacy Policy</a>
+            <a href="https://discord.gg/F9N8DmsJyz" target="_blank">Support</a>
+            <a href="https://top.gg/bot/920757063599132683/vote" target="_blank">Vote</a>
             <a href="https://dsc.gg/inevitablebot" target="_blank">Invite Bot</a>
         </div>
     </nav>
@@ -232,7 +292,29 @@
 
     <footer>
         <p>&copy; 2026 Inevitable Bot. All rights reserved.</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.8;">Built with ❤️ by <strong
+                style="color: var(--text-primary);">Unbeatable</strong> (Discord: <code>3alif</code>)</p>
     </footer>
 
+    <script>
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('nav-links');
+
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            // Toggle hamburger icon animation
+            const spans = hamburger.querySelectorAll('span');
+            if (navLinks.classList.contains('active')) {
+                spans[0].style.transform = 'translateY(9px) rotate(45deg)';
+                spans[1].style.opacity = '0';
+                spans[2].style.transform = 'translateY(-9px) rotate(-45deg)';
+            } else {
+                spans[0].style.transform = 'none';
+                spans[1].style.opacity = '1';
+                spans[2].style.transform = 'none';
+            }
+        });
+    </script>
 </body>
+
 </html>

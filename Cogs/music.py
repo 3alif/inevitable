@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from typing import Optional
 import asyncio
 import yt_dlp as youtube_dl
 import datetime
@@ -23,32 +24,84 @@ class  YTDLSource(discord.PCMVolumeTransformer):
     self.url = data.get('url')
     self.title = data.get('title')
     self.thumbnail = data.get('thumbnail')
+    self.webpage_url = data.get('webpage_url')
+    self.uploader = data.get('uploader') or data.get('artist') or data.get('creator')
+  
+  _YDL_OPTS = {
+      'format': 'bestaudio/best',
+      'restrictfilenames': True,
+      'noplaylist': True,
+      'nocheckcertificate': True,
+      'ignoreerrors': False,
+      'logtostderr': False,
+      'quiet': True,
+      'no_warnings': True,
+      'default_search': 'scsearch',
+      'extractor_retries': 1,
+      'source_address': '0.0.0.0',
+      'skip_download': True,
+  }
+
+  @classmethod
+  async def get_info(cls, query, *, loop=None):
+      """Fetch track metadata (title, webpage_url, uploader, thumbnail) without streaming."""
+      loop = loop or asyncio.get_event_loop()
+      ydl_opts = {**cls._YDL_OPTS, 'extract_flat': False}
+
+      def _extract():
+          with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+              return ydl.extract_info(query, download=False)
+
+      data = await loop.run_in_executor(None, _extract)
+
+      if 'entries' in data:
+          data = data['entries'][0] if isinstance(data['entries'], list) else data['entries']
+
+      return {
+          'query': query,
+          'title': data.get('title', query),
+          'webpage_url': data.get('webpage_url') or data.get('url'),
+          'uploader': data.get('uploader') or data.get('artist') or data.get('creator'),
+          'thumbnail': data.get('thumbnail'),
+      }
+
+  @classmethod
+  async def search(cls, query, *, loop=None, limit=10):
+      """Search SoundCloud and return up to `limit` flat result dicts (fast, no audio stream)."""
+      loop = loop or asyncio.get_event_loop()
+      ydl_opts = {
+          **cls._YDL_OPTS,
+          'extract_flat': True,
+          'default_search': f'scsearch{limit}',
+          'ignoreerrors': True,
+      }
+
+      def _extract():
+          with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+              return ydl.extract_info(query, download=False)
+
+      data = await loop.run_in_executor(None, _extract)
+
+      results = []
+      if data and 'entries' in data:
+          for entry in data['entries']:
+              if not entry:
+                  continue
+              dur = entry.get('duration')
+              results.append({
+                  'title':       entry.get('title', 'Unknown'),
+                  'webpage_url': entry.get('url') or entry.get('webpage_url'),
+                  'uploader':    entry.get('uploader') or entry.get('artist'),
+                  'duration':    dur,
+              })
+              if len(results) >= limit:
+                  break
+      return results
 
   @classmethod
   async def from_url(cls, url, *, loop = None, stream = False):
       loop = loop or asyncio.get_event_loop()
-
-      ydl_opts = {
-          'format': 'bestaudio/best',
-          'restrictfilenames': True,
-          'noplaylist': True,
-          'nocheckcertificate': True,
-          'ignoreerrors': False,
-          'logtostderr': False,
-          'quiet': True,
-          'no_warnings': True,
-          'default_search': 'scsearch',
-          'extractor_retries': 1,
-          'source_address': '0.0.0.0',
-          'extract_flat': False,
-          'skip_download': True,
-          # 'cookiefile': 'cookies.txt',
-          # 'extractor_args': {
-          #    'youtube': {
-          #       'player_client': ['web_safari,web_embedded,-tv_downgraded']
-          #    }
-          # }
-      }
+      ydl_opts = {**cls._YDL_OPTS, 'extract_flat': False}
 
       def _extract_data(*args, **kwargs):
          with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -73,14 +126,103 @@ class  YTDLSource(discord.PCMVolumeTransformer):
       return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_opts), data=data)
 
 
+# ---------------------------------------------------------------------------
+# Search results UI
+# ---------------------------------------------------------------------------
+
+class SearchResultsView(discord.ui.View):
+    """Shows a Select menu so the user can pick one of the search results."""
+
+    def __init__(self, results: list, music_cog, original_interaction: discord.Interaction):
+        super().__init__(timeout=60)
+        self.results = results
+        self.music_cog = music_cog
+        self.original_interaction = original_interaction
+        self.message: Optional[discord.Message] = None
+
+        options = []
+        for i, track in enumerate(results):
+            label = track['title'][:100]
+            uploader = track.get('uploader') or 'Unknown Artist'
+            description = f'by {uploader}'[:100]
+            options.append(discord.SelectOption(label=label, description=description, value=str(i)))
+
+        self.select = discord.ui.Select(
+            placeholder='Choose a track to add to the queue…',
+            options=options,
+            min_values=1,
+            max_values=1,
+        )
+        self.select.callback = self._on_select
+        self.add_item(self.select)
+
+    async def _on_select(self, interaction: discord.Interaction):
+        if interaction.user.id != self.original_interaction.user.id:
+            return await interaction.response.send_message(
+                'This search menu belongs to someone else.', ephemeral=True
+            )
+
+        idx = int(interaction.data['values'][0])
+        chosen = self.results[idx]
+        await interaction.response.defer()
+
+        try:
+            track = await YTDLSource.get_info(
+                chosen['webpage_url'], loop=self.music_cog.client.loop
+            )
+        except Exception as e:
+            print(f'[MUSIC] Search select metadata error: {e}', flush=True)
+            track = {**chosen, 'query': chosen['webpage_url']}
+
+        self.music_cog.queue.append(track)
+        track_url = track.get('webpage_url')
+        title_display = (
+            f'[{track["title"]}]({track_url})' if track_url else f'**{track["title"]}**'
+        )
+        self.music_cog.for_queue.append(
+            f'{title_display} | `Requested by: {interaction.user}`'
+        )
+        await interaction.followup.send(f'Track added to queue: {title_display}')
+
+        self.select.disabled = True
+        self.stop()
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except Exception:
+                pass
+        
+        vc = interaction.guild.voice_client
+        if vc and not vc.is_playing() and not vc.is_paused():
+            asyncio.create_task(
+                self.music_cog.play_next(self.original_interaction)
+            )
+
+    async def on_timeout(self):
+        self.select.disabled = True
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except Exception:
+                pass
+
+
 class Music(commands.Cog):
   def __init__(self, client):
     self.client = client
-    self.queue = []
-    self.for_queue = []
+    self.queue    = {}  # guild_id -> list of track info dicts
+    self.for_queue = {}  # guild_id -> list of formatted strings for /queue display
+
+  def _get_queue(self, guild_id: int) -> list:
+      """Return this guild's track queue, creating it if needed."""
+      return self.queue.setdefault(guild_id, [])
+
+  def _get_for_queue(self, guild_id: int) -> list:
+      """Return this guild's display queue, creating it if needed."""
+      return self.for_queue.setdefault(guild_id, [])
 
   async def play_next(self, interaction: discord.Interaction):
-    if len(self.queue) == 0:
+    if len(self._get_queue(interaction.guild.id)) == 0:
        return
     
     voice_client = interaction.guild.voice_client
@@ -88,11 +230,16 @@ class Music(commands.Cog):
         return
 
     try:
-        query = self.queue.pop(0)
-        self.for_queue.pop(0)
+        guild_id = interaction.guild.id
+        q = self._get_queue(guild_id)
+        fq = self._get_for_queue(guild_id)
 
-        print(f"[MUSIC] Fetching audio for: {query}", flush=True)
-        player = await YTDLSource.from_url(query, loop=self.client.loop, stream=True)
+        track = q.pop(0)
+        fq.pop(0)
+
+        stream_url = track.get('webpage_url') or track.get('query')
+        print(f"[MUSIC] Fetching audio for: {track['title']}", flush=True)
+        player = await YTDLSource.from_url(stream_url, loop=self.client.loop, stream=True)
 
         def after_playing(error):
             if error:
@@ -105,12 +252,18 @@ class Music(commands.Cog):
 
         voice_client.play(player, after=after_playing)
         print(f"[MUSIC] Now playing: {player.title}", flush=True)
-        
+
+        track_url = player.webpage_url or track.get('webpage_url')
+        title_text = f'[{player.title}]({track_url})' if track_url else player.title
+        uploader = player.uploader or track.get('uploader')
+
         embed = discord.Embed(
             title='Started Playing:',
-            description=f'{player.title}\n\nAll your votes inspire us. [Vote Here](https://top.gg/bot/920757063599132683/vote)',
+            description=f'{title_text}\n\nAll your votes inspire us. [Vote Here](https://top.gg/bot/920757063599132683/vote)',
             color=discord.Colour.greyple()
         )
+        if uploader:
+            embed.add_field(name='Artist', value=uploader, inline=True)
         if hasattr(player, 'thumbnail') and player.thumbnail:
             embed.set_thumbnail(url=player.thumbnail)
             
@@ -157,28 +310,87 @@ class Music(commands.Cog):
       if not interaction.guild.voice_client:
           channel = interaction.user.voice.channel
           await channel.connect(self_deaf = True)
+      
+      try:
+          track = await YTDLSource.get_info(query, loop=self.client.loop)
+      except Exception as e:
+          print(f"[MUSIC] Metadata fetch failed, falling back to raw query: {e}", flush=True)
+          track = {'query': query, 'title': query, 'webpage_url': None, 'uploader': None, 'thumbnail': None}
 
-      self.queue.append(query)
-      self.for_queue.append(f'{query} | `Requested by: {interaction.user}`')
-      await interaction.followup.send(f'Track added to queue: **{query}**')
-          
+      self._get_queue(interaction.guild.id).append(track)
+      track_url = track.get('webpage_url')
+      title_display = f'[{track["title"]}]({track_url})' if track_url else f'**{track["title"]}**'
+      self._get_for_queue(interaction.guild.id).append(f'{title_display} | `Requested by: {interaction.user}`')
+      await interaction.followup.send(f'Track added to queue: {title_display}')
+
       if not interaction.guild.voice_client.is_playing() and not interaction.guild.voice_client.is_paused():
         asyncio.create_task(self.play_next(interaction))
+
+  @app_commands.command(name='search', description='Search SoundCloud for a track and pick one to add to the queue.')
+  @app_commands.describe(query='What to search for on SoundCloud')
+  async def search(self, interaction: discord.Interaction, query: str):
+      if not interaction.user.voice:
+          return await interaction.response.send_message('You need to join a voice channel first.')
+
+      await interaction.response.defer()
+
+      if not interaction.guild.voice_client:
+          channel = interaction.user.voice.channel
+          await channel.connect(self_deaf=True)
+
+      results = await YTDLSource.search(query, loop=self.client.loop)
+      if not results:
+          return await interaction.followup.send('No results found for that query.')
+      
+      lines = []
+      for i, track in enumerate(results, 1):
+          title = track['title']
+          url   = track.get('webpage_url')
+          artist = track.get('uploader') or 'Unknown Artist'
+          dur    = track.get('duration')
+          dur_str = f'`{int(dur) // 60}:{int(dur) % 60:02d}`' if dur else ''
+          entry = f'`{i:02}.` [{title}]({url})' if url else f'`{i:02}.` **{title}**'
+          entry += f' — {artist}'
+          if dur_str:
+              entry += f' {dur_str}'
+          lines.append(entry)
+
+      guild_icon = interaction.guild.icon.url if interaction.guild.icon else None
+      user_avatar = interaction.user.display_avatar.url
+
+      embed = discord.Embed(
+          title=f'🔍 Search Results: {query}',
+          description='\n'.join(lines),
+          color=discord.Color.greyple(),
+          timestamp=datetime.datetime.utcnow(),
+      )
+      embed.set_author(name=interaction.guild.name, icon_url=guild_icon)
+      embed.set_footer(
+          text=f'Searched by {interaction.user} • Select a track below to add it',
+          icon_url=user_avatar,
+      )
+
+      view = SearchResultsView(results, self, interaction)
+      msg = await interaction.followup.send(embed=embed, view=view)
+      view.message = msg
 
   @app_commands.command(name = 'queue', description = 'Shows the music queue.')
   async def queue(self, interaction: discord.Interaction):
     if interaction.user.voice:
-      if len(self.for_queue) == 0:
+      fq = self._get_for_queue(interaction.guild.id)
+      if len(fq) == 0:
         await interaction.response.send_message('Empty queue.')
       else:
+        guild_icon = interaction.guild.icon.url if interaction.guild.icon else None
+        user_avatar = interaction.user.display_avatar.url
         queuembed = discord.Embed(
           title = 'Queue',
-          description = '\n'.join(self.for_queue),
+          description = '\n'.join(fq),
           color = discord.Color.greyple(),
           timestamp = datetime.datetime.utcnow()
         )
-        queuembed.set_author(name = interaction.guild.name, icon_url = interaction.guild.icon.url)
-        queuembed.set_footer(text = f'Requested by {interaction.user}', icon_url = interaction.user.avatar.url)
+        queuembed.set_author(name = interaction.guild.name, icon_url = guild_icon)
+        queuembed.set_footer(text = f'Requested by {interaction.user}', icon_url = user_avatar)
         await interaction.response.send_message(embed = queuembed)
     else:
       await interaction.response.send_message('You need to join in a voice channel first.')
@@ -204,6 +416,8 @@ class Music(commands.Cog):
     if interaction.user.voice:
       if interaction.guild.voice_client:
         if interaction.guild.voice_client.is_playing():
+          self._get_queue(interaction.guild.id).clear()
+          self._get_for_queue(interaction.guild.id).clear()
           interaction.guild.voice_client.stop()
           await interaction.response.send_message('🛑')
         else:

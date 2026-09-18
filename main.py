@@ -12,7 +12,7 @@ from discord import app_commands
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
-VERSION = '0.9'
+VERSION = '1.0'
 
 
 class MyBot(commands.Bot):

@@ -72,13 +72,14 @@ class  YTDLSource(discord.PCMVolumeTransformer):
       ydl_opts = {
           **cls._YDL_OPTS,
           'extract_flat': True,
-          'default_search': f'scsearch{limit}',
+          'default_search': 'auto',
           'ignoreerrors': True,
       }
+      search_url = f'scsearch{limit}:{query}'
 
       def _extract():
           with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-              return ydl.extract_info(query, download=False)
+              return ydl.extract_info(search_url, download=False)
 
       data = await loop.run_in_executor(None, _extract)
 
@@ -111,6 +112,9 @@ class  YTDLSource(discord.PCMVolumeTransformer):
 
       if 'entries' in data:
          data = data['entries'][0] if isinstance(data['entries'], list) else data['entries']
+
+      if data.get('extractor') == 'soundcloud' and data.get('duration') == 30:
+          raise Exception('Track is geo-restricted or premium-only (30-second preview).')
 
       before_opts = FFMPEG_OPTIONS['before_options']
       user_agent = data.get('http_headers', {}).get('User-Agent')
@@ -272,6 +276,12 @@ class Music(commands.Cog):
         print(f"[MUSIC ERROR] Failed in play_next: {e}", flush=True)
         traceback.print_exc(file=sys.stdout)
         sys.stdout.flush()
+        
+        error_msg = str(e)
+        if len(error_msg) > 500:
+            error_msg = error_msg[:500] + "..."
+        await interaction.channel.send(f"❌ Failed to play `{track.get('title', 'Unknown')}`: {error_msg}")
+        await self.play_next(interaction)
 
   @app_commands.command(name = 'join', description = 'Connects to your voice channel.')
   async def join(self, interaction: discord.Interaction):

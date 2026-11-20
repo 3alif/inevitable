@@ -67,5 +67,5 @@ If you'd like to self-host this bot, follow these steps:
 
 ## 👨‍💻 Developer
 
-Built with ❤️ by **Unbeatable** (Discord: `3alif`).
+Built with ❤️ by `Alif` (Discord: **[Unbeatable](https://discord.com/users/814099179961581568)**).
 If you find this project helpful, consider giving it a ⭐ on GitHub!

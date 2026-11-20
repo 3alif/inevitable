@@ -9,6 +9,23 @@ import sys
 import traceback
 
 
+async def safe_send(send_coro_factory, retries=3):
+    """Retry a Discord send/followup call with exponential backoff on 429s."""
+    for attempt in range(retries):
+        try:
+            return await send_coro_factory()
+        except discord.HTTPException as e:
+            if e.status == 429 and attempt < retries - 1:
+                # Try to parse Discord's retry_after; fall back to exponential backoff
+                retry_after = getattr(e, 'retry_after', None)
+                if retry_after is None:
+                    retry_after = 2 ** (attempt + 1)
+                print(f'[RATE LIMIT] 429 hit, retrying in {retry_after}s (attempt {attempt + 1}/{retries})', flush=True)
+                await asyncio.sleep(retry_after)
+            else:
+                raise
+
+
 youtube_dl.utils.bug_reports_message = lambda *args, **kwargs: ''
 FFMPEG_OPTIONS = {
    'options': '-vn',
@@ -194,7 +211,7 @@ class SearchResultsView(discord.ui.View):
             description=f'🎵 Track added to queue: {title_display}',
             color=discord.Color.greyple()
         )
-        await interaction.followup.send(embed=queue_embed)
+        await safe_send(lambda: interaction.followup.send(embed=queue_embed))
 
         self.select.disabled = True
         self.stop()
@@ -279,7 +296,7 @@ class Music(commands.Cog):
         if hasattr(player, 'thumbnail') and player.thumbnail:
             embed.set_thumbnail(url=player.thumbnail)
             
-        await interaction.channel.send(embed=embed)
+        await safe_send(lambda: interaction.channel.send(embed=embed))
     except Exception as e:
         error_str = str(e)
         print(f"[MUSIC ERROR] Failed in play_next: {error_str}", flush=True)
@@ -294,11 +311,11 @@ class Music(commands.Cog):
           if not interaction.guild.voice_client:
               user_channel = interaction.user.voice.channel
               await user_channel.connect(self_deaf = True)
-              await interaction.followup.send('Successfully joined the voice channel.')
+              await safe_send(lambda: interaction.followup.send('Successfully joined the voice channel.'))
           else:
-              await interaction.followup.send('I am already in a voice channel.')
+              await safe_send(lambda: interaction.followup.send('I am already in a voice channel.'))
       else:
-          await interaction.followup.send('You need to join in a voice channel first.')
+          await safe_send(lambda: interaction.followup.send('You need to join in a voice channel first.'))
 
 
   @app_commands.command(name = 'leave', description = 'Disconnects from your voice channel.')
@@ -345,10 +362,10 @@ class Music(commands.Cog):
                   print(f'[MUSIC] Candidate "{candidate["title"]}" skipped: {e}', flush=True)
 
       if track is None:
-          return await interaction.followup.send(
+          return await safe_send(lambda: interaction.followup.send(
               f'❌ Could not find a playable track for **{query}**. '
               'The track may be geo-restricted or DRM-protected on SoundCloud.'
-          )
+          ))
 
       self._get_queue(interaction.guild.id).append(track)
       track_url = track.get('webpage_url')
@@ -358,7 +375,7 @@ class Music(commands.Cog):
           description=f'🎵 Track added to queue: {title_display}',
           color=discord.Color.greyple()
       )
-      await interaction.followup.send(embed=queue_embed)
+      await safe_send(lambda: interaction.followup.send(embed=queue_embed))
 
       if not interaction.guild.voice_client.is_playing() and not interaction.guild.voice_client.is_paused():
         asyncio.create_task(self.play_next(interaction))
@@ -377,7 +394,7 @@ class Music(commands.Cog):
       
       candidates = await YTDLSource.search(query, loop=self.client.loop, limit=15)
       if not candidates:
-          return await interaction.followup.send('No results found for that query.')
+          return await safe_send(lambda: interaction.followup.send('No results found for that query.'))
     
       async def _validate(candidate):
           url = candidate.get('webpage_url')
@@ -392,9 +409,9 @@ class Music(commands.Cog):
       results = [t for t in validated_tasks if t is not None][:10]
 
       if not results:
-          return await interaction.followup.send(
+          return await safe_send(lambda: interaction.followup.send(
               '❌ No playable results found. All matched tracks appear to be geo-restricted or DRM-protected.'
-          )
+          ))
 
       lines = []
       for i, track in enumerate(results, 1):
@@ -421,7 +438,7 @@ class Music(commands.Cog):
       )
 
       view = SearchResultsView(results, self, interaction)
-      msg = await interaction.followup.send(embed=embed, view=view)
+      msg = await safe_send(lambda: interaction.followup.send(embed=embed, view=view))
       view.message = msg
 
   @app_commands.command(name = 'queue', description = 'Shows the music queue.')

@@ -137,17 +137,26 @@ class  YTDLSource(discord.PCMVolumeTransformer):
       if data.get('extractor') == 'soundcloud' and data.get('duration') == 30:
           raise Exception('Track is geo-restricted or premium-only (30-second preview).')
 
-      before_opts = FFMPEG_OPTIONS['before_options']
-      user_agent = data.get('http_headers', {}).get('User-Agent')
-      if user_agent:
-         before_opts += f' -user_agent "{user_agent}"'
+      filename = data['url'] if stream else data.get('filename')
+
+      http_headers = data.get('http_headers') or {}
+      headers_str = ''.join(f'{k}: {v}\r\n' for k, v in http_headers.items())
+
+      is_hls = isinstance(filename, str) and ('.m3u8' in filename or '/hls' in filename.lower())
+      if is_hls:
+          before_opts = '-protocol_whitelist file,http,https,tcp,tls,crypto'
+      else:
+          before_opts = '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
+
+      if headers_str:
+          before_opts += f' -headers "{headers_str}"'
 
       ffmpeg_opts = {
          'before_options': before_opts,
          'options': FFMPEG_OPTIONS['options']
       }
-      
-      filename = data['url'] if stream else data.get('filename')
+
+      print(f'[MUSIC] Stream URL type: {"HLS" if is_hls else "Direct"} | Headers: {list(http_headers.keys())}', flush=True)
       return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_opts), data=data)
 
 

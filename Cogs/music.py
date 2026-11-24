@@ -341,6 +341,7 @@ class Music(commands.Cog):
 
   @app_commands.command(name = 'play', description = 'Starts playing your requested music.')
   @app_commands.describe(query = 'Enter the name or URL of the song you want to play.')
+  @app_commands.checks.cooldown(1, 5.0, key=lambda i: i.guild_id)
   async def play(self, interaction: discord.Interaction, query: str):
       if not interaction.user.voice:
           return await interaction.response.send_message('You need to join in a voice channel first.')
@@ -391,6 +392,7 @@ class Music(commands.Cog):
 
   @app_commands.command(name='search', description='Search SoundCloud for a track and pick one to add to the queue.')
   @app_commands.describe(query='What to search for on SoundCloud')
+  @app_commands.checks.cooldown(1, 10.0, key=lambda i: i.guild_id)
   async def search(self, interaction: discord.Interaction, query: str):
       if not interaction.user.voice:
           return await interaction.response.send_message('You need to join a voice channel first.')

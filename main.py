@@ -44,9 +44,15 @@ class MyBot(commands.Bot):
         elif isinstance(error, app_commands.CommandOnCooldown):
             msg = f"⏳ This command is on cooldown. Try again in {error.retry_after:.1f}s."
         else:
-            msg = "⚠️ Something went wrong running that command. It's been logged."
-            print(f"[APP COMMAND ERROR] {interaction.command.name if interaction.command else 'unknown'}: {error}", flush=True)
-            traceback.print_exception(type(error), error, error.__traceback__)
+            # Check if the root cause is a Cloudflare / Discord rate limit
+            original = getattr(error, 'original', error)
+            if isinstance(original, discord.HTTPException) and original.status == 429:
+                msg = "⚠️ The bot is being rate-limited by Discord. Please try again in a minute."
+                print(f"[RATE LIMIT] 429 on command '{interaction.command.name if interaction.command else 'unknown'}': Cloudflare/Discord IP-level rate limit", flush=True)
+            else:
+                msg = "⚠️ Something went wrong running that command. It's been logged."
+                print(f"[APP COMMAND ERROR] {interaction.command.name if interaction.command else 'unknown'}: {error}", flush=True)
+                traceback.print_exception(type(error), error, error.__traceback__)
 
         try:
             if interaction.response.is_done():
@@ -58,7 +64,15 @@ class MyBot(commands.Bot):
 
     async def on_ready(self):
         await self.change_presence(activity=discord.Game(name='/help'))
-        await self.tree.sync()
+        # Only sync commands once; skip on reconnects.
+        # Global slash command sync is heavily rate-limited by Discord.
+        if not hasattr(self, '_synced'):
+            self._synced = True
+            try:
+                await self.tree.sync()
+                print(f"Slash commands synced successfully.", flush=True)
+            except discord.HTTPException as e:
+                print(f"[WARN] Command sync failed (rate limited?): {e}", flush=True)
         print(f"imma ready in {len(self.guilds)} servers")
 
 
